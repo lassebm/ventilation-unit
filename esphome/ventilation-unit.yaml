@@ -1,0 +1,137 @@
+esphome:
+  name: ventilation-unit
+  friendly_name: "Ventilation unit"
+
+esp32:
+  board: esp32-s3-devkitc-1
+  framework:
+    type: esp-idf
+
+logger:
+  hardware_uart: UART0
+  baud_rate: 115200
+
+api:
+  # encryption:
+  #   key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+    # password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+# web_server:
+
+external_components:
+  # - source: github://lassebm/ventilation-unit/esphome@main
+  #   components: [ventilation_unit, ventilation_panel_bridge]
+  #   refresh: 120s
+  - source:
+      type: local
+      path: components
+
+usb_uart:
+  - type: CP210X
+    vid: 0x10C4
+    pid: 0xEA61
+    channels:
+      - id: controller_usb_uart
+        baud_rate: 38400
+        debug: false
+
+uart:
+  # Panel-side UART: physical panel TX/RX connects here.
+  # If no physical panel is connected, this UART can be left configured and
+  # panel_connected below should stay false.
+  - id: panel_uart
+    tx_pin: GPIO18
+    rx_pin: GPIO17
+    baud_rate: 600
+    # debug:
+  # Controller-side UART: controller panel-port TX/RX connects here.
+  - id: controller_panel_uart
+    tx_pin: GPIO14
+    rx_pin: GPIO13
+    baud_rate: 600
+    # debug:
+
+ventilation_unit:
+  uart_id: controller_usb_uart
+  update_interval: 5s
+  temperature:
+    name: Ventilation Temperature
+  humidity:
+    name: Ventilation Humidity
+  humidity_voltage:
+    name: Ventilation Humidity Voltage
+  inflow_rpm:
+    name: Ventilation Inflow RPM
+  outflow_rpm:
+    name: Ventilation Outflow RPM
+  force_input:
+    name: Ventilation Force Input
+  bypass_state:
+    name: Ventilation Bypass State
+  edit_mode:
+    name: Ventilation Edit Mode
+  bypass_hardware_present:
+    name: Ventilation Bypass Hardware Present
+  bypass_polarity_invert:
+    name: Ventilation Bypass Polarity Invert
+  filter_runtime:
+    name: Ventilation Filter Runtime
+  filter_replacement_interval:
+    name: Ventilation Filter Replacement Interval
+  filter_replacement_reset:
+    name: Ventilation Filter Replacement Reset
+  freeze_protection_threshold:
+    name: Ventilation Freeze Protection Threshold
+  humidity_boost_threshold:
+    name: Ventilation Humidity Boost Threshold
+  inflow_speed_setpoints:
+    standby:
+      name: Ventilation Inflow Standby
+    speed_1:
+      name: Ventilation Inflow Speed 1
+    speed_2:
+      name: Ventilation Inflow Speed 2
+    speed_3:
+      name: Ventilation Inflow Speed 3
+    force_input:
+      name: Ventilation Inflow Force Input
+    humidity_boost:
+      name: Ventilation Inflow Humidity Boost
+  outflow_speed_setpoints:
+    standby:
+      name: Ventilation Outflow Standby
+    speed_1:
+      name: Ventilation Outflow Speed 1
+    speed_2:
+      name: Ventilation Outflow Speed 2
+    speed_3:
+      name: Ventilation Outflow Speed 3
+    force_input:
+      name: Ventilation Outflow Force Input
+    humidity_boost:
+      name: Ventilation Outflow Humidity Boost
+  firmware_version:
+    name: Ventilation Firmware Version
+
+ventilation_panel_bridge:
+  # With a physical panel: keep panel_uart_id and set panel_connected: true.
+  # Without a physical panel: keep panel_connected: false so a floating RX pin
+  # is not treated as panel commands.
+  panel_uart_id: panel_uart
+  controller_uart_id: controller_panel_uart
+  panel_connected: false
+  mode:
+    name: Ventilation Mode
+  bypass:
+    name: Ventilation Bypass
+  filter_due:
+    name: Ventilation Filter Due
+  alarm:
+    name: Ventilation Alarm
