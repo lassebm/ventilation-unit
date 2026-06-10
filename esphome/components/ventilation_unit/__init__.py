@@ -19,6 +19,7 @@ from esphome.const import (
     DEVICE_CLASS_TEMPERATURE,
     DEVICE_CLASS_VOLTAGE,
     ENTITY_CATEGORY_CONFIG,
+    ENTITY_CATEGORY_DIAGNOSTIC,
     ICON_FAN,
     ICON_RESTART,
     ICON_TIMER,
@@ -125,6 +126,7 @@ CONFIG_SCHEMA = (
                 accuracy_decimals=2,
                 device_class=DEVICE_CLASS_VOLTAGE,
                 state_class=STATE_CLASS_MEASUREMENT,
+                entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
             ),
             cv.Optional(CONF_INFLOW_RPM): sensor.sensor_schema(
                 unit_of_measurement=UNIT_REVOLUTIONS_PER_MINUTE,

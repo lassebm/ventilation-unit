@@ -62,63 +62,63 @@ ventilation_unit:
   uart_id: controller_usb_uart
   update_interval: 5s
   temperature:
-    name: Ventilation Temperature
+    name: Temperature
   humidity:
-    name: Ventilation Humidity
+    name: Humidity
   humidity_voltage:
-    name: Ventilation Humidity Voltage
+    name: Humidity Voltage
   inflow_rpm:
-    name: Ventilation Inflow RPM
+    name: Inflow RPM
   outflow_rpm:
-    name: Ventilation Outflow RPM
+    name: Outflow RPM
   force_input:
-    name: Ventilation Force Input
+    name: Force Input
   bypass_state:
-    name: Ventilation Bypass State
+    name: Bypass State
   edit_mode:
-    name: Ventilation Edit Mode
+    name: Edit Mode
   bypass_hardware_present:
-    name: Ventilation Bypass Hardware Present
+    name: Bypass Hardware Present
   bypass_polarity_invert:
-    name: Ventilation Bypass Polarity Invert
+    name: Bypass Polarity Invert
   filter_runtime:
-    name: Ventilation Filter Runtime
+    name: Filter Runtime
   filter_replacement_interval:
-    name: Ventilation Filter Replacement Interval
+    name: Filter Replacement Interval
   filter_replacement_reset:
-    name: Ventilation Filter Replacement Reset
+    name: Filter Replacement Reset
   freeze_protection_threshold:
-    name: Ventilation Freeze Protection Threshold
+    name: Freeze Protection Threshold
   humidity_boost_threshold:
-    name: Ventilation Humidity Boost Threshold
+    name: Humidity Boost Threshold
   inflow_speed_setpoints:
     standby:
-      name: Ventilation Inflow Standby
+      name: Inflow Standby
     speed_1:
-      name: Ventilation Inflow Speed 1
+      name: Inflow Speed 1
     speed_2:
-      name: Ventilation Inflow Speed 2
+      name: Inflow Speed 2
     speed_3:
-      name: Ventilation Inflow Speed 3
+      name: Inflow Speed 3
     force_input:
-      name: Ventilation Inflow Force Input
+      name: Inflow Force Input
     humidity_boost:
-      name: Ventilation Inflow Humidity Boost
+      name: Inflow Humidity Boost
   outflow_speed_setpoints:
     standby:
-      name: Ventilation Outflow Standby
+      name: Outflow Standby
     speed_1:
-      name: Ventilation Outflow Speed 1
+      name: Outflow Speed 1
     speed_2:
-      name: Ventilation Outflow Speed 2
+      name: Outflow Speed 2
     speed_3:
-      name: Ventilation Outflow Speed 3
+      name: Outflow Speed 3
     force_input:
-      name: Ventilation Outflow Force Input
+      name: Outflow Force Input
     humidity_boost:
-      name: Ventilation Outflow Humidity Boost
+      name: Outflow Humidity Boost
   firmware_version:
-    name: Ventilation Firmware Version
+    name: Firmware Version
 
 ventilation_panel_bridge:
   # With a physical panel: keep panel_uart_id and set panel_connected: true.
@@ -128,10 +128,10 @@ ventilation_panel_bridge:
   controller_uart_id: controller_panel_uart
   panel_connected: false
   mode:
-    name: Ventilation Mode
+    name: Mode
   bypass:
-    name: Ventilation Bypass
+    name: Bypass
   filter_due:
-    name: Ventilation Filter Due
+    name: Filter Due
   alarm:
-    name: Ventilation Alarm
+    name: Alarm
