@@ -106,6 +106,8 @@ class VentilationPanelBridgeComponent : public Component {
   bool bypass_override_{false};
   bool have_controller_status_{false};
   uint8_t last_controller_status_{0};
+  bool have_published_command_{false};
+  uint8_t last_published_command_{0};
   uint32_t last_command_tx_{0};
 
   void pump_panel_commands_() {
@@ -193,10 +195,15 @@ class VentilationPanelBridgeComponent : public Component {
   bool time_reached_(uint32_t deadline) const { return static_cast<int32_t>(millis() - deadline) >= 0; }
 
   void publish_effective_command_(uint8_t command) {
-    if (this->mode_select_ != nullptr)
+    bool first = !this->have_published_command_;
+    if (this->mode_select_ != nullptr &&
+        (first || (command & MODE_MASK) != (this->last_published_command_ & MODE_MASK)))
       this->mode_select_->publish_state(command & MODE_MASK);
-    if (this->bypass_switch_ != nullptr)
+    if (this->bypass_switch_ != nullptr &&
+        (first || (command & BYPASS_MASK) != (this->last_published_command_ & BYPASS_MASK)))
       this->bypass_switch_->publish_state((command & BYPASS_MASK) != 0);
+    this->have_published_command_ = true;
+    this->last_published_command_ = command;
   }
 
   void publish_controller_status_(uint8_t status) {
