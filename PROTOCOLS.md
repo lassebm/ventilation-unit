@@ -129,6 +129,17 @@ register. The firmware selects setpoints as follows:
 The force input and humidity logic can raise the selected setpoints to the
 force or humidity boost setpoints.
 
+### Freeze Protection
+
+Register `0x70` sets the freeze protection threshold, which acts on the inflow
+(supply) fan. The firmware decodes the temperature register `0x51` to degrees C
+(raw − 40) and compares it against the threshold:
+
+- Temperature ≤ threshold: the inflow fan output is forced to 0 and a "freeze
+  active" flag is latched.
+- The fan stays off until temperature reaches threshold + 3 C (a fixed 3 C
+  recovery hysteresis), then normal setpoint control resumes.
+
 ### Bypass Registers
 
 Register `0x30` exposes the current bypass state and can be written through the
