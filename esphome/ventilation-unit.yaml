@@ -26,7 +26,7 @@ wifi:
 # web_server:
 
 external_components:
-  # - source: github://lassebm/ventilation-unit/esphome@main
+  # - source: github://lassebm/ventilation-unit@main
   #   components: [ventilation_unit, ventilation_panel_bridge]
   #   refresh: 120s
   - source:
