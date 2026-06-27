@@ -1,12 +1,12 @@
-# Ventilation Unit Reverse Engineering
+# Vents VUT 250 → Home Assistant (ESPHome)
 
-Reverse-engineering notes, ESPHome external components, and a Python CLI for
-the STM32F100-based controller in the Vents VUT 250 VB EC A14 ventilation unit.
+A reverse-engineered ESPHome integration for the **Vents VUT 250 VB EC A14**
+ventilation unit — external components that bring its STM32F100-based controller
+into Home Assistant.
 
-This is not an official Vents project. It touches ventilation, fans, bypass
-dampers, filter/service counters, and frost-protection settings, so treat it as
-experimental control software. Verify values on your own unit before saving
-configuration to flash or letting Home Assistant automate anything.
+Because it drives ventilation, fans, bypass dampers, filter/service counters, and
+frost-protection settings, treat it as experimental control software. See
+[Safety And Disclaimer](#safety-and-disclaimer) below.
 
 ## What This Project Does
 
@@ -146,6 +146,16 @@ The underlying evidence came from:
 
 Both the dumped controller firmware and the Windows application were
 disassembled with Ghidra.
+
+## Safety And Disclaimer
+
+- This project is the result of **reverse-engineering hardware the author owns**.
+  It is **not affiliated with, authorized by, or endorsed by Vents**. "Vents" and
+  "VUT" are trademarks of their respective owners, used here only to describe
+  compatibility.
+- You connect this at your own risk. Connecting or configuring it incorrectly can
+  damage your controller or the connected hardware.
+- Provided **as-is, without warranty of any kind**. See [`LICENSE`](LICENSE).
 
 ## License
 
