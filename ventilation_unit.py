@@ -21,13 +21,13 @@ Requires:
 from __future__ import annotations
 
 import argparse
+from dataclasses import dataclass
+from datetime import datetime
 import json
 import math
 import signal
 import sys
 import time
-from dataclasses import dataclass
-from datetime import datetime
 
 try:
     import serial
@@ -44,8 +44,18 @@ INTER_BYTE_DELAY = 0.002
 REG_COMMIT_CONFIG_TO_FLASH = 0x60
 
 SETPOINT_REGS = {
-    0x10, 0x11, 0x12, 0x13, 0x14, 0x15,
-    0x20, 0x21, 0x22, 0x23, 0x24, 0x25,
+    0x10,
+    0x11,
+    0x12,
+    0x13,
+    0x14,
+    0x15,
+    0x20,
+    0x21,
+    0x22,
+    0x23,
+    0x24,
+    0x25,
 }
 
 DECODE_DISPLAY_KEYS = (
@@ -100,7 +110,7 @@ class Register:
             self.max_value if self.raw_max_value is None else self.raw_max_value,
         )
 
-    def format_display_value(self, value: float | int) -> str:
+    def format_display_value(self, value: float) -> str:
         return f"{format_number(value)}{self.unit_suffix}"
 
 
@@ -302,7 +312,9 @@ def coerce_write_value(
     if register.force_required and not raw:
         raise VentError(f"{register.name} is advanced/raw-only; use --raw to write it")
     if register.force_required and not force:
-        raise VentError(f"{register.name} is advanced/raw-only; use --force to write it")
+        raise VentError(
+            f"{register.name} is advanced/raw-only; use --force to write it"
+        )
     if not register.writable and not force:
         raise VentError(
             f"{register.name} is not marked writable; use --force to try anyway"
@@ -370,7 +382,7 @@ def require_integer(value: float, label: str) -> int:
     return int(value)
 
 
-def format_number(value: float | int) -> str:
+def format_number(value: float) -> str:
     return str(int(value)) if float(value).is_integer() else str(value)
 
 
@@ -439,7 +451,7 @@ def wait_for_app(ser: serial.Serial, timeout: float) -> int:
         drain(ser)
         try:
             return read_register(ser, 0xFF)
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - probing for any reply during connect retry
             last_error = exc
             time.sleep(0.1)
     raise VentError(f"application did not answer register 0xFF: {last_error}")
@@ -542,14 +554,18 @@ def sample_timestamp() -> str:
     return datetime.now().astimezone().isoformat(timespec="seconds")
 
 
-def read_items(ser: serial.Serial, registers: list[Register], ppr: int) -> list[dict[str, object]]:
+def read_items(
+    ser: serial.Serial, registers: list[Register], ppr: int
+) -> list[dict[str, object]]:
     return [
         make_item(register, read_register(ser, register.addr), ppr)
         for register in registers
     ]
 
 
-def print_items(items: list[dict[str, object]], args: argparse.Namespace, timestamp: str | None) -> None:
+def print_items(
+    items: list[dict[str, object]], args: argparse.Namespace, timestamp: str | None
+) -> None:
     if args.json:
         if timestamp is None:
             print(json.dumps(items[0] if len(items) == 1 else items, indent=2))
@@ -605,9 +621,13 @@ def command_read_all(args: argparse.Namespace) -> int:
 def command_read(args: argparse.Namespace) -> int:
     register = args.register
     if register.addr == REG_COMMIT_CONFIG_TO_FLASH and not args.allow_side_effect:
-        raise VentError("0x60 commits config to flash; use --allow-side-effect to read it")
+        raise VentError(
+            "0x60 commits config to flash; use --allow-side-effect to read it"
+        )
     if not register.readable and not args.force:
-        raise VentError(f"{register.name} is not marked readable; use --force to try anyway")
+        raise VentError(
+            f"{register.name} is not marked readable; use --force to try anyway"
+        )
 
     ser = connect(args)
     try:
@@ -665,13 +685,27 @@ def command_write(args: argparse.Namespace) -> int:
 
 
 def add_connection_args(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("port", metavar="SERIAL_PORT", help="Serial port path or device name")
-    parser.add_argument("--no-reset", action="store_true", help="Assume app is already running")
-    parser.add_argument("--reset-low", type=float, default=0.4, help="DTR reset pulse seconds")
-    parser.add_argument("--boot-wait", type=float, default=0.8, help="Seconds to wait after reset")
-    parser.add_argument("--app-timeout", type=float, default=3.0, help="Seconds to wait for app")
-    parser.add_argument("--ppr", type=int, default=1, help="Pulses per revolution for RPM display")
-    parser.add_argument("--json", action="store_true", help="Print machine-readable JSON")
+    parser.add_argument(
+        "port", metavar="SERIAL_PORT", help="Serial port path or device name"
+    )
+    parser.add_argument(
+        "--no-reset", action="store_true", help="Assume app is already running"
+    )
+    parser.add_argument(
+        "--reset-low", type=float, default=0.4, help="DTR reset pulse seconds"
+    )
+    parser.add_argument(
+        "--boot-wait", type=float, default=0.8, help="Seconds to wait after reset"
+    )
+    parser.add_argument(
+        "--app-timeout", type=float, default=3.0, help="Seconds to wait for app"
+    )
+    parser.add_argument(
+        "--ppr", type=int, default=1, help="Pulses per revolution for RPM display"
+    )
+    parser.add_argument(
+        "--json", action="store_true", help="Print machine-readable JSON"
+    )
 
 
 def add_poll_args(parser: argparse.ArgumentParser) -> None:
@@ -688,10 +722,14 @@ def add_poll_args(parser: argparse.ArgumentParser) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Ventilation unit application-protocol CLI")
+    parser = argparse.ArgumentParser(
+        description="Ventilation unit application-protocol CLI"
+    )
     subcommands = parser.add_subparsers(dest="command")
 
-    read_all = subcommands.add_parser("read-all", help="Read all safe confirmed registers")
+    read_all = subcommands.add_parser(
+        "read-all", help="Read all safe confirmed registers"
+    )
     add_connection_args(read_all)
     add_poll_args(read_all)
     read_all.set_defaults(func=command_read_all)
@@ -699,14 +737,26 @@ def build_parser() -> argparse.ArgumentParser:
     read = subcommands.add_parser("read", help="Read one register")
     add_connection_args(read)
     add_poll_args(read)
-    read.add_argument("register", type=parse_register, help="Register address or known name")
-    read.add_argument("--allow-side-effect", action="store_true", help="Allow reading 0x60 save trigger")
-    read.add_argument("--force", action="store_true", help="Try even if register is not marked readable")
+    read.add_argument(
+        "register", type=parse_register, help="Register address or known name"
+    )
+    read.add_argument(
+        "--allow-side-effect",
+        action="store_true",
+        help="Allow reading 0x60 save trigger",
+    )
+    read.add_argument(
+        "--force",
+        action="store_true",
+        help="Try even if register is not marked readable",
+    )
     read.set_defaults(func=command_read)
 
     write = subcommands.add_parser("write", help="Write one register")
     add_connection_args(write)
-    write.add_argument("register", type=parse_register, help="Register address or known name")
+    write.add_argument(
+        "register", type=parse_register, help="Register address or known name"
+    )
     write.add_argument(
         "value",
         type=parse_number,
@@ -717,9 +767,19 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Treat value as the exact raw 16-bit register value",
     )
-    write.add_argument("--verify", action="store_true", help="Read the register back after writing")
-    write.add_argument("--save", action="store_true", help="Persist config by reading 0x60 after writing")
-    write.add_argument("--force", action="store_true", help="Try even if register is not marked writable")
+    write.add_argument(
+        "--verify", action="store_true", help="Read the register back after writing"
+    )
+    write.add_argument(
+        "--save",
+        action="store_true",
+        help="Persist config by reading 0x60 after writing",
+    )
+    write.add_argument(
+        "--force",
+        action="store_true",
+        help="Try even if register is not marked writable",
+    )
     write.set_defaults(func=command_write)
 
     return parser

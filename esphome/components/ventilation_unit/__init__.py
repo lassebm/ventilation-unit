@@ -1,5 +1,4 @@
 import esphome.codegen as cg
-import esphome.config_validation as cv
 from esphome.components import (
     binary_sensor,
     button,
@@ -10,6 +9,7 @@ from esphome.components import (
     uart,
     usb_uart,
 )
+import esphome.config_validation as cv
 from esphome.const import (
     CONF_HUMIDITY,
     CONF_ID,
@@ -72,12 +72,18 @@ ventilation_unit_ns = cg.esphome_ns.namespace("ventilation_unit")
 VentilationUnitComponent = ventilation_unit_ns.class_(
     "VentilationUnitComponent", cg.PollingComponent, uart.UARTDevice
 )
-VentilationUnitNumber = ventilation_unit_ns.class_("VentilationUnitNumber", number.Number)
-VentilationUnitSwitch = ventilation_unit_ns.class_("VentilationUnitSwitch", switch.Switch)
+VentilationUnitNumber = ventilation_unit_ns.class_(
+    "VentilationUnitNumber", number.Number
+)
+VentilationUnitSwitch = ventilation_unit_ns.class_(
+    "VentilationUnitSwitch", switch.Switch
+)
 VentilationUnitEditModeSwitch = ventilation_unit_ns.class_(
     "VentilationUnitEditModeSwitch", switch.Switch
 )
-VentilationUnitButton = ventilation_unit_ns.class_("VentilationUnitButton", button.Button)
+VentilationUnitButton = ventilation_unit_ns.class_(
+    "VentilationUnitButton", button.Button
+)
 
 
 def setpoint_schema():
@@ -100,9 +106,7 @@ SPEED_SETPOINTS = (
 
 
 def speed_setpoints_schema():
-    return cv.Schema(
-        {cv.Optional(key): setpoint_schema() for key in SPEED_SETPOINTS}
-    )
+    return cv.Schema({cv.Optional(key): setpoint_schema() for key in SPEED_SETPOINTS})
 
 
 CONFIG_SCHEMA = (
@@ -194,7 +198,9 @@ CONFIG_SCHEMA = (
         }
     )
     .extend(cv.polling_component_schema("30s"))
-    .extend(cv.Schema({cv.GenerateID(CONF_UART_ID): cv.use_id(usb_uart.USBUartChannel)}))
+    .extend(
+        cv.Schema({cv.GenerateID(CONF_UART_ID): cv.use_id(usb_uart.USBUartChannel)})
+    )
 )
 
 

@@ -93,22 +93,16 @@ class VentilationUnitComponent : public PollingComponent, public uart::UARTDevic
   void set_filter_replacement_interval_number(VentilationUnitNumber *number) {
     filter_replacement_interval_number_ = number;
   }
-  void set_filter_replacement_reset_button(VentilationUnitButton *button) {
-    filter_replacement_reset_button_ = button;
-  }
+  void set_filter_replacement_reset_button(VentilationUnitButton *button) { filter_replacement_reset_button_ = button; }
   void set_freeze_protection_threshold_number(VentilationUnitNumber *number) {
     freeze_protection_threshold_number_ = number;
   }
-  void set_humidity_boost_threshold_number(VentilationUnitNumber *number) {
-    humidity_boost_threshold_number_ = number;
-  }
-  void set_inflow_speed_setpoint_number(uint8_t index,
-                                        VentilationUnitNumber *number) {
+  void set_humidity_boost_threshold_number(VentilationUnitNumber *number) { humidity_boost_threshold_number_ = number; }
+  void set_inflow_speed_setpoint_number(uint8_t index, VentilationUnitNumber *number) {
     if (index < SETPOINT_COUNT)
       inflow_speed_setpoint_numbers_[index] = number;
   }
-  void set_outflow_speed_setpoint_number(uint8_t index,
-                                         VentilationUnitNumber *number) {
+  void set_outflow_speed_setpoint_number(uint8_t index, VentilationUnitNumber *number) {
     if (index < SETPOINT_COUNT)
       outflow_speed_setpoint_numbers_[index] = number;
   }
@@ -266,18 +260,18 @@ class VentilationUnitComponent : public PollingComponent, public uart::UARTDevic
   static constexpr uint32_t RESET_PULSE_MS = 400;
   static constexpr uint32_t STARTUP_DELAY_MS = 800;
   static constexpr uint8_t REFRESH_REGS[] = {
-      REG_HUMIDITY_SENSOR_INPUT,           // 0-10 V humidity input
-      REG_TEMPERATURE,                     // Temperature, encoded as C + 40
-      REG_INFLOW_RPM,                      // Inflow RPM at PPR=1
-      REG_OUTFLOW_RPM,                     // Outflow RPM at PPR=1
-      REG_FORCE_INPUT,                     // Force input
-      REG_BYPASS,                          // Bypass
-      REG_BYPASS_HARDWARE_PRESENT,         // Bypass hardware present
-      REG_BYPASS_POLARITY_INVERT,          // Bypass polarity invert
-      REG_FILTER_RUNTIME,                  // Filter runtime
-      REG_FILTER_REPLACEMENT_INTERVAL,     // Filter replacement interval
-      REG_FREEZE_PROTECTION_THRESHOLD,     // Freeze protection threshold
-      REG_HUMIDITY_BOOST_THRESHOLD,        // Humidity boost threshold
+      REG_HUMIDITY_SENSOR_INPUT,            // 0-10 V humidity input
+      REG_TEMPERATURE,                      // Temperature, encoded as C + 40
+      REG_INFLOW_RPM,                       // Inflow RPM at PPR=1
+      REG_OUTFLOW_RPM,                      // Outflow RPM at PPR=1
+      REG_FORCE_INPUT,                      // Force input
+      REG_BYPASS,                           // Bypass
+      REG_BYPASS_HARDWARE_PRESENT,          // Bypass hardware present
+      REG_BYPASS_POLARITY_INVERT,           // Bypass polarity invert
+      REG_FILTER_RUNTIME,                   // Filter runtime
+      REG_FILTER_REPLACEMENT_INTERVAL,      // Filter replacement interval
+      REG_FREEZE_PROTECTION_THRESHOLD,      // Freeze protection threshold
+      REG_HUMIDITY_BOOST_THRESHOLD,         // Humidity boost threshold
       REG_INFLOW_SPEED_SETPOINT_BASE + 0,   // Inflow standby setpoint
       REG_INFLOW_SPEED_SETPOINT_BASE + 1,   // Inflow speed 1 setpoint
       REG_INFLOW_SPEED_SETPOINT_BASE + 2,   // Inflow speed 2 setpoint
@@ -424,9 +418,7 @@ class VentilationUnitComponent : public PollingComponent, public uart::UARTDevic
     return REG_VERSION;
   }
 
-  static constexpr size_t refresh_register_count_() {
-    return sizeof(REFRESH_REGS) / sizeof(REFRESH_REGS[0]);
-  }
+  static constexpr size_t refresh_register_count_() { return sizeof(REFRESH_REGS) / sizeof(REFRESH_REGS[0]); }
 
   void handle_refresh_() {
     uint16_t raw;
@@ -479,11 +471,9 @@ class VentilationUnitComponent : public PollingComponent, public uart::UARTDevic
       this->publish_number_(this->freeze_protection_threshold_number_, raw);
     } else if (reg == REG_HUMIDITY_BOOST_THRESHOLD) {
       this->publish_number_(this->humidity_boost_threshold_number_, raw);
-    } else if (reg >= REG_INFLOW_SPEED_SETPOINT_BASE &&
-               reg < REG_INFLOW_SPEED_SETPOINT_BASE + SETPOINT_COUNT) {
+    } else if (reg >= REG_INFLOW_SPEED_SETPOINT_BASE && reg < REG_INFLOW_SPEED_SETPOINT_BASE + SETPOINT_COUNT) {
       this->publish_number_(this->inflow_speed_setpoint_numbers_[reg - REG_INFLOW_SPEED_SETPOINT_BASE], raw);
-    } else if (reg >= REG_OUTFLOW_SPEED_SETPOINT_BASE &&
-               reg < REG_OUTFLOW_SPEED_SETPOINT_BASE + SETPOINT_COUNT) {
+    } else if (reg >= REG_OUTFLOW_SPEED_SETPOINT_BASE && reg < REG_OUTFLOW_SPEED_SETPOINT_BASE + SETPOINT_COUNT) {
       this->publish_number_(this->outflow_speed_setpoint_numbers_[reg - REG_OUTFLOW_SPEED_SETPOINT_BASE], raw);
     }
     this->status_clear_warning();
