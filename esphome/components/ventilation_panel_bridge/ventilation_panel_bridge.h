@@ -1,7 +1,7 @@
 #pragma once
 
 #include "esphome/components/binary_sensor/binary_sensor.h"
-#include "esphome/components/select/select.h"
+#include "esphome/components/fan/fan.h"
 #include "esphome/components/switch/switch.h"
 #include "esphome/components/uart/uart.h"
 #include "esphome/core/component.h"
@@ -12,12 +12,19 @@ namespace ventilation_panel_bridge {
 
 class VentilationPanelBridgeComponent;
 
-class VentilationPanelBridgeModeSelect : public select::Select {
+class VentilationPanelBridgeModeFan : public fan::Fan, public Component {
  public:
   void set_parent(VentilationPanelBridgeComponent *parent) { parent_ = parent; }
 
+  // Off (Standby) plus three ordered speeds, matching the controller's 2-bit mode field.
+  fan::FanTraits get_traits() override { return fan::FanTraits(false, true, false, 3); }
+
+  void dump_config() override { LOG_FAN("", "Ventilation mode", this); }
+
  protected:
-  void control(size_t index) override;
+  static constexpr const char *TAG = "ventilation_panel_bridge.fan";
+
+  void control(const fan::FanCall &call) override;
 
   VentilationPanelBridgeComponent *parent_{nullptr};
 };
@@ -37,7 +44,7 @@ class VentilationPanelBridgeComponent : public Component {
   void set_panel_uart(uart::UARTComponent *uart) { panel_uart_ = uart; }
   void set_controller_uart(uart::UARTComponent *uart) { controller_uart_ = uart; }
   void set_panel_connected(bool connected) { panel_connected_ = connected; }
-  void set_mode_select(VentilationPanelBridgeModeSelect *select) { mode_select_ = select; }
+  void set_mode_fan(VentilationPanelBridgeModeFan *fan) { mode_fan_ = fan; }
   void set_bypass_switch(VentilationPanelBridgeBypassSwitch *switch_) { bypass_switch_ = switch_; }
   void set_filter_due_binary_sensor(binary_sensor::BinarySensor *sensor) { filter_due_binary_sensor_ = sensor; }
   void set_alarm_binary_sensor(binary_sensor::BinarySensor *sensor) { alarm_binary_sensor_ = sensor; }
@@ -49,7 +56,6 @@ class VentilationPanelBridgeComponent : public Component {
 
   void dump_config() override {
     ESP_LOGCONFIG(TAG, "Ventilation panel bridge");
-    LOG_SELECT("  ", "Mode", this->mode_select_);
     LOG_SWITCH("  ", "Bypass", this->bypass_switch_);
     LOG_BINARY_SENSOR("  ", "Filter due", this->filter_due_binary_sensor_);
     LOG_BINARY_SENSOR("  ", "Alarm", this->alarm_binary_sensor_);
@@ -91,7 +97,7 @@ class VentilationPanelBridgeComponent : public Component {
   uart::UARTComponent *panel_uart_{nullptr};
   uart::UARTComponent *controller_uart_{nullptr};
   bool panel_connected_{true};
-  VentilationPanelBridgeModeSelect *mode_select_{nullptr};
+  VentilationPanelBridgeModeFan *mode_fan_{nullptr};
   VentilationPanelBridgeBypassSwitch *bypass_switch_{nullptr};
   binary_sensor::BinarySensor *filter_due_binary_sensor_{nullptr};
   binary_sensor::BinarySensor *alarm_binary_sensor_{nullptr};
@@ -196,9 +202,14 @@ class VentilationPanelBridgeComponent : public Component {
 
   void publish_effective_command_(uint8_t command) {
     bool first = !this->have_published_command_;
-    if (this->mode_select_ != nullptr &&
-        (first || (command & MODE_MASK) != (this->last_published_command_ & MODE_MASK)))
-      this->mode_select_->publish_state(command & MODE_MASK);
+    if (this->mode_fan_ != nullptr && (first || (command & MODE_MASK) != (this->last_published_command_ & MODE_MASK))) {
+      uint8_t mode = command & MODE_MASK;
+      this->mode_fan_->state = mode != 0;
+      // Keep the last speed level while standby/off so the UI restores it on the next turn-on.
+      if (mode != 0)
+        this->mode_fan_->speed = mode;
+      this->mode_fan_->publish_state();
+    }
     if (this->bypass_switch_ != nullptr &&
         (first || (command & BYPASS_MASK) != (this->last_published_command_ & BYPASS_MASK)))
       this->bypass_switch_->publish_state((command & BYPASS_MASK) != 0);
@@ -219,10 +230,19 @@ class VentilationPanelBridgeComponent : public Component {
   }
 };
 
-inline void VentilationPanelBridgeModeSelect::control(size_t index) {
+inline void VentilationPanelBridgeModeFan::control(const fan::FanCall &call) {
   if (this->parent_ == nullptr)
     return;
-  uint8_t mode = static_cast<uint8_t>(index);
+  bool on = this->state;
+  int speed = this->speed;
+  if (call.get_state().has_value())
+    on = *call.get_state();
+  if (call.get_speed().has_value())
+    speed = *call.get_speed();
+  // Turning on without an explicit speed defaults to the lowest speed.
+  if (on && speed < 1)
+    speed = 1;
+  uint8_t mode = on ? static_cast<uint8_t>(speed) : 0;
   if (mode > 3)
     mode = 3;
   this->parent_->set_mode_override(mode);

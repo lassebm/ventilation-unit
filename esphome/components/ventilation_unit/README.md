@@ -54,18 +54,19 @@ ESPHome can apply sticky overrides to the durable command fields:
 
 | Field | Bits | Ownership |
 | --- | --- | --- |
-| Mode | `0x03` | ESPHome `select` override persists until the physical panel changes mode bits |
+| Mode | `0x03` | ESPHome `fan` override persists until the physical panel changes mode bits |
 | Bypass | `0x08` | ESPHome override persists until the physical panel changes bypass bit |
 | Filter reset | `0x04` | Forwarded from the physical panel only |
 
-The mode select options map directly to panel modes:
+The mode is exposed as a `fan` entity with three speed levels. Off maps to
+Standby (panel mode 0); the three speeds map to the remaining panel modes:
 
-| Select option | Panel mode |
+| Fan state | Panel mode |
 | --- | ---: |
-| `Standby` | 0 |
-| `Speed 1` | 1 |
-| `Speed 2` | 2 |
-| `Speed 3` | 3 |
+| Off | 0 (Standby) |
+| Speed 1 (33%) | 1 |
+| Speed 2 (66%) | 2 |
+| Speed 3 (100%) | 3 |
 
 The controller firmware debounces panel command changes. It keeps a stability
 counter of up to 10 repeated command bytes; a different command must be seen

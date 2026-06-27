@@ -1,10 +1,10 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
-from esphome.components import binary_sensor, select, switch, uart
+from esphome.components import binary_sensor, fan, switch, uart
 from esphome.const import CONF_ID, DEVICE_CLASS_PROBLEM, ICON_FAN
 
 DEPENDENCIES = ["uart"]
-AUTO_LOAD = ["binary_sensor", "select", "switch"]
+AUTO_LOAD = ["binary_sensor", "fan", "switch"]
 
 CONF_PANEL_UART_ID = "panel_uart_id"
 CONF_CONTROLLER_UART_ID = "controller_uart_id"
@@ -14,14 +14,12 @@ CONF_BYPASS = "bypass"
 CONF_FILTER_DUE = "filter_due"
 CONF_ALARM = "alarm"
 
-MODE_OPTIONS = ["Standby", "Speed 1", "Speed 2", "Speed 3"]
-
 ventilation_panel_bridge_ns = cg.esphome_ns.namespace("ventilation_panel_bridge")
 VentilationPanelBridgeComponent = ventilation_panel_bridge_ns.class_(
     "VentilationPanelBridgeComponent", cg.Component
 )
-VentilationPanelBridgeModeSelect = ventilation_panel_bridge_ns.class_(
-    "VentilationPanelBridgeModeSelect", select.Select
+VentilationPanelBridgeModeFan = ventilation_panel_bridge_ns.class_(
+    "VentilationPanelBridgeModeFan", fan.Fan, cg.Component
 )
 VentilationPanelBridgeBypassSwitch = ventilation_panel_bridge_ns.class_(
     "VentilationPanelBridgeBypassSwitch", switch.Switch
@@ -34,8 +32,8 @@ CONFIG_SCHEMA = cv.Schema(
         cv.Optional(CONF_PANEL_UART_ID): cv.use_id(uart.UARTComponent),
         cv.Required(CONF_CONTROLLER_UART_ID): cv.use_id(uart.UARTComponent),
         cv.Optional(CONF_PANEL_CONNECTED, default=True): cv.boolean,
-        cv.Optional(CONF_MODE): select.select_schema(
-            VentilationPanelBridgeModeSelect,
+        cv.Optional(CONF_MODE): fan.fan_schema(
+            VentilationPanelBridgeModeFan,
             icon=ICON_FAN,
         ),
         cv.Optional(CONF_BYPASS): switch.switch_schema(
@@ -63,9 +61,10 @@ async def to_code(config):
     cg.add(var.set_panel_connected(config[CONF_PANEL_CONNECTED]))
 
     if mode_config := config.get(CONF_MODE):
-        sel = await select.new_select(mode_config, options=MODE_OPTIONS)
-        cg.add(sel.set_parent(var))
-        cg.add(var.set_mode_select(sel))
+        mode_fan = await fan.new_fan(mode_config)
+        await cg.register_component(mode_fan, mode_config)
+        cg.add(mode_fan.set_parent(var))
+        cg.add(var.set_mode_fan(mode_fan))
 
     if bypass_config := config.get(CONF_BYPASS):
         sw = await switch.new_switch(bypass_config)

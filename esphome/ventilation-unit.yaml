@@ -127,7 +127,8 @@ ventilation_panel_bridge:
   controller_uart_id: controller_panel_uart
   panel_connected: false
   mode:
-    name: Mode
+    # Primary control: adopt the device friendly name (shown as "Ventilation unit").
+    name: None
   bypass:
     name: Bypass
   filter_due:
