@@ -61,12 +61,18 @@ ESPHome can apply sticky overrides to the durable command fields:
 The mode is exposed as a `fan` entity with three speed levels. Off maps to
 Standby (panel mode 0); the three speeds map to the remaining panel modes:
 
-| Fan state | Panel mode |
-| --- | ---: |
-| Off | 0 (Standby) |
-| Speed 1 (33%) | 1 |
-| Speed 2 (66%) | 2 |
-| Speed 3 (100%) | 3 |
+| Fan state | Preset | Panel mode |
+| --- | --- | ---: |
+| Off | — | 0 (Standby) |
+| Speed 1 (33%) | Speed 1 | 1 |
+| Speed 2 (66%) | Speed 2 | 2 |
+| Speed 3 (100%) | Speed 3 | 3 |
+
+The same three modes are also exposed as fan **preset modes**, so they appear in
+the automation preset picker and in voice assistants. Presets alias the speeds in
+declared order, so the preset and the speed slider always reflect the same panel
+mode. The names default to `Speed 1`/`Speed 2`/`Speed 3` and can be overridden
+per device with `preset_modes` under `mode:`.
 
 The controller firmware debounces panel command changes. It keeps a stability
 counter of up to 10 repeated command bytes; a different command must be seen

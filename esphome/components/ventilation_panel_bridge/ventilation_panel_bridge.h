@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cstring>
+#include <initializer_list>
+
 #include "esphome/components/binary_sensor/binary_sensor.h"
 #include "esphome/components/fan/fan.h"
 #include "esphome/components/switch/switch.h"
@@ -16,16 +19,36 @@ class VentilationPanelBridgeModeFan : public fan::Fan, public Component {
  public:
   void set_parent(VentilationPanelBridgeComponent *parent) { parent_ = parent; }
 
-  // Off (Standby) plus three ordered speeds, matching the controller's 2-bit mode field.
-  fan::FanTraits get_traits() override { return fan::FanTraits(false, true, false, 3); }
+  // Optional named presets; they alias the ordered speeds 1-3 in the order given.
+  void set_preset_modes(std::initializer_list<const char *> presets) { this->set_supported_preset_modes(presets); }
+
+  fan::FanTraits get_traits() override {
+    this->wire_preset_modes_(this->traits_);
+    return this->traits_;
+  }
 
   void dump_config() override { LOG_FAN("", "Ventilation mode", this); }
+
+  // Reflect the actual panel mode (0 = Off/Standby, 1-3 = speed) into the fan entity.
+  void publish_mode(uint8_t mode) {
+    this->state = mode != 0;
+    // Keep the last speed/preset while standby/off so the UI restores it on the next turn-on.
+    if (mode != 0) {
+      this->speed = mode;
+      const auto &presets = this->get_traits().supported_preset_modes();
+      if (static_cast<size_t>(mode - 1) < presets.size())
+        this->set_preset_mode_(presets[mode - 1]);
+    }
+    this->publish_state();
+  }
 
  protected:
   static constexpr const char *TAG = "ventilation_panel_bridge.fan";
 
   void control(const fan::FanCall &call) override;
 
+  // Off (Standby) plus three ordered speeds, matching the controller's 2-bit mode field.
+  fan::FanTraits traits_{false, true, false, 3};
   VentilationPanelBridgeComponent *parent_{nullptr};
 };
 
@@ -202,14 +225,8 @@ class VentilationPanelBridgeComponent : public Component {
 
   void publish_effective_command_(uint8_t command) {
     bool first = !this->have_published_command_;
-    if (this->mode_fan_ != nullptr && (first || (command & MODE_MASK) != (this->last_published_command_ & MODE_MASK))) {
-      uint8_t mode = command & MODE_MASK;
-      this->mode_fan_->state = mode != 0;
-      // Keep the last speed level while standby/off so the UI restores it on the next turn-on.
-      if (mode != 0)
-        this->mode_fan_->speed = mode;
-      this->mode_fan_->publish_state();
-    }
+    if (this->mode_fan_ != nullptr && (first || (command & MODE_MASK) != (this->last_published_command_ & MODE_MASK)))
+      this->mode_fan_->publish_mode(command & MODE_MASK);
     if (this->bypass_switch_ != nullptr &&
         (first || (command & BYPASS_MASK) != (this->last_published_command_ & BYPASS_MASK)))
       this->bypass_switch_->publish_state((command & BYPASS_MASK) != 0);
@@ -239,6 +256,17 @@ inline void VentilationPanelBridgeModeFan::control(const fan::FanCall &call) {
     on = *call.get_state();
   if (call.get_speed().has_value())
     speed = *call.get_speed();
+  // A preset selects one of the ordered speeds (presets alias speeds 1-3 in declared order).
+  if (call.has_preset_mode()) {
+    const auto &presets = this->get_traits().supported_preset_modes();
+    for (size_t i = 0; i < presets.size(); i++) {
+      if (std::strcmp(presets[i], call.get_preset_mode()) == 0) {
+        speed = static_cast<int>(i) + 1;
+        on = true;
+        break;
+      }
+    }
+  }
   // Turning on without an explicit speed defaults to the lowest speed.
   if (on && speed < 1)
     speed = 1;

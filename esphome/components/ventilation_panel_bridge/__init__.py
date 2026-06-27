@@ -1,7 +1,13 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.components import binary_sensor, fan, switch, uart
-from esphome.const import CONF_ID, DEVICE_CLASS_PROBLEM, ICON_FAN
+from esphome.components.fan import validate_preset_modes
+from esphome.const import (
+    CONF_ID,
+    CONF_PRESET_MODES,
+    DEVICE_CLASS_PROBLEM,
+    ICON_FAN,
+)
 
 DEPENDENCIES = ["uart"]
 AUTO_LOAD = ["binary_sensor", "fan", "switch"]
@@ -35,6 +41,13 @@ CONFIG_SCHEMA = cv.Schema(
         cv.Optional(CONF_MODE): fan.fan_schema(
             VentilationPanelBridgeModeFan,
             icon=ICON_FAN,
+        ).extend(
+            {
+                # Named presets alias the three running speeds in order.
+                cv.Optional(
+                    CONF_PRESET_MODES, default=["Speed 1", "Speed 2", "Speed 3"]
+                ): validate_preset_modes,
+            }
         ),
         cv.Optional(CONF_BYPASS): switch.switch_schema(
             VentilationPanelBridgeBypassSwitch,
@@ -64,6 +77,8 @@ async def to_code(config):
         mode_fan = await fan.new_fan(mode_config)
         await cg.register_component(mode_fan, mode_config)
         cg.add(mode_fan.set_parent(var))
+        if preset_modes := mode_config.get(CONF_PRESET_MODES):
+            cg.add(mode_fan.set_preset_modes(preset_modes))
         cg.add(var.set_mode_fan(mode_fan))
 
     if bypass_config := config.get(CONF_BYPASS):
