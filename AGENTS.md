@@ -1,7 +1,8 @@
 # AGENTS.md
 
-Guidance for coding agents (and contributors using them) working in this repo. End-user docs live
-in [README.md](README.md) and [PROTOCOLS.md](PROTOCOLS.md); this file is about *working on the code*.
+Guidance for coding agents (and contributors using them) working in this repo (`CLAUDE.md` is a
+symlink to this file). User-facing docs live in [README.md](README.md) and [docs/](docs/); this
+file is about *working on the code*.
 
 ## What this is
 
@@ -12,17 +13,18 @@ device behavior — see the README for the full picture.
 
 ## Layout
 
-- `PROTOCOLS.md` — authoritative protocol reference: USB/PC register map, scaling formulas,
-  front-panel UART byte layout, startup behavior, firmware quirks. Source of truth for any protocol
+- `docs/PROTOCOL.md` — authoritative protocol reference: USB/PC register map, scaling formulas,
+  front panel UART byte layout, startup behavior, firmware quirks. Source of truth for any protocol
   code; don't invent register addresses or scaling factors.
-- `ventilation_unit.py` — standalone Python CLI for direct USB/PC register read/write/poll.
+- `docs/HARDWARE.md`, `docs/INSTALL.md` — end-user hardware/wiring and install/CLI/usage docs.
+- `cli/ventilation_unit.py` — standalone Python CLI for direct USB/PC register read/write/poll.
 - `esphome/components/ventilation_unit/` — ESPHome component for the USB/PC register protocol
-  (C++ runtime in `ventilation_unit.h` + Python codegen in `__init__.py`). Has its own `README.md`.
+  (C++ runtime in `ventilation_unit.h` + Python codegen in `__init__.py`).
 - `esphome/components/ventilation_panel_bridge/` — ESPHome component bridging the separate physical
-  front-panel UART for mode/bypass control.
+  front panel UART for mode/bypass control.
 - `esphome/ventilation-unit.yaml` — the example / bring-up config. `esphome/secrets.yaml` is
   gitignored and local-only.
-- `tests/` — unittest suite for CLI parsing, value scaling, and write guards.
+- `cli/tests/` — unittest suite for CLI parsing, value scaling, and write guards.
 - `reverse-engineering/` — **gitignored, local-only.** Firmware dumps, Ghidra analysis, Renode
   emulation, captures, RE notes. Never published; never reference these files from tracked code or docs.
 
@@ -30,19 +32,19 @@ device behavior — see the README for the full picture.
 
 The controller exposes two independent application-level UARTs — keep them straight:
 
-- **USB/PC link** via CP210x bridge at `38400 8N1` — used by `ventilation_unit.py` and the
+- **USB/PC link** via CP210x bridge at `38400 8N1` — used by `cli/ventilation_unit.py` and the
   `ventilation_unit` component. Needs the CP210x modem-control lines to reset the STM32 into
   application mode, so it requires ESPHome `usb_uart` (a plain GPIO `uart` will not work) and an
-  ESP32 with USB host (e.g. ESP32-S3).
-- **Front-panel UART** at `600 8N1` — used by `ventilation_panel_bridge`.
+  ESP32 with a USB host interface (e.g. an ESP32-S3).
+- **Front panel UART** at `600 8N1` — used by `ventilation_panel_bridge`.
 
 ## Build & test
 
-- Python tests (no hardware needed): `python3 -m unittest discover -s tests`
+- Python tests (no hardware needed): `python3 -m unittest discover -s cli/tests -t cli`
 - CLI (`uv` pulls in `pyserial` on the fly):
-  `uv run --with pyserial ventilation_unit.py --help`
+  `uv run --with pyserial cli/ventilation_unit.py --help`
 - Compile checks:
-  - `python3 -m py_compile ventilation_unit.py`
+  - `python3 -m py_compile cli/ventilation_unit.py`
   - `esphome compile esphome/ventilation-unit.yaml` (needs `esphome/secrets.yaml`).
 
 ## Formatting & linting
@@ -63,11 +65,11 @@ don't fail the lint.
 
 - **No RE references in published code/docs** — don't cite anything from the gitignored
   `reverse-engineering/` tree (notes, Ghidra symbols, capture/decoder scripts). Explain behavior
-  self-containedly, citing `PROTOCOLS.md`.
+  self-containedly, citing `docs/PROTOCOL.md`.
 - **CLI write units:** writes use human-facing units by default (speed setpoints as %, filter
   interval in hours, thresholds in displayed units). `--raw` writes exact 16-bit register payloads,
   `--force` bypasses guards on low-level writes, `--save` persists to flash. Register definitions
-  and access flags live in `ventilation_unit.py`; the tests assert the scaling (e.g. 40% → raw 400).
+  and access flags live in `cli/ventilation_unit.py`; the tests assert the scaling (e.g. 40% → raw 400).
 - **ESPHome config writes** are gated behind an `edit_mode` switch — off during normal operation.
 - Otherwise, match the style of the surrounding code and docs.
 
@@ -76,5 +78,5 @@ don't fail the lint.
 - Commit `esphome/secrets.yaml`, the `.esphome/` build cache, or anything under
   `reverse-engineering/`.
 - Change hardware-validated protocol/scaling logic without a clear reason — it drives real fans,
-  bypass dampers, and frost protection. Prefer additive changes; cross-check `PROTOCOLS.md` and run
+  bypass dampers, and frost protection. Prefer additive changes; cross-check `docs/PROTOCOL.md` and run
   the tests after touching register or scaling code.
