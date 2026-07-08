@@ -59,6 +59,7 @@ aren't part of this repository.
 | **[docs/HARDWARE.md](docs/HARDWARE.md)** | Serial links, board requirements, and wiring |
 | **[docs/INSTALL.md](docs/INSTALL.md)** | ESPHome flashing, configuration, and usage (entities, modes, bypass), plus the CLI tool and development checks |
 | **[docs/PROTOCOL.md](docs/PROTOCOL.md)** | Protocol reference: register map, scaling formulas, panel byte layout, startup behavior, and firmware quirks |
+| **[enclosure/](enclosure/)** | A parametric, 3D-printable enclosure — the author's build, ready to adapt |
 
 ## Safety and disclaimer
 

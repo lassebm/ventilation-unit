@@ -64,3 +64,9 @@ The front panel tap is only needed for the `ventilation_panel_bridge` component.
 For USB/PC register access alone — sensors, setpoints, and filter reset through
 the `ventilation_unit` component — the USB connection to the controller is
 enough.
+
+## Enclosure
+
+A parametric, 3D-printable enclosure for the assembled node lives in
+**[../enclosure/](../enclosure/)** — the author's specific build (ESP32-S3-DevKitC-1 +
+double RJ45 breakout), shared as a reference you can re-fit to your own parts.
