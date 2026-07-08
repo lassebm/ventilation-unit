@@ -57,9 +57,7 @@ there is no CI to catch misses:**
 - **YAML** — `yamllint .` (uses `.yamllint`).
 
 If a tool isn't installed locally, run it ephemerally, e.g. `uvx ruff format .`, `uvx yamllint .`,
-`uvx --from clang-format clang-format -i …`. The commented-out blocks in `ventilation-unit.yaml`
-produce two `comments-indentation` *warnings* (intentional — they illustrate nesting); warnings
-don't fail the lint.
+`uvx --from clang-format clang-format -i …`.
 
 ## Conventions (keep consistent)
 

@@ -1,3 +1,10 @@
+*.py[cod]
 .DS_Store
+.claude/
+.esphome/
+.ruff_cache/
+.vscode/
+/reverse-engineering/
+/enclosure/*.stl
 __pycache__/
-reverse-engineering/
+secrets.yaml

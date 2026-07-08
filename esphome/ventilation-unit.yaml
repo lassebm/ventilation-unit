@@ -1,3 +1,6 @@
+# Vents VUT 250 -> Home Assistant example / bring-up config (ESP32-S3). Wiring, power
+# safety, flashing, and configuration are documented in docs/ (HARDWARE.md / INSTALL.md).
+
 esphome:
   name: ventilation-unit
   friendly_name: "Ventilation"
@@ -12,20 +15,16 @@ logger:
   baud_rate: 115200
 
 api:
-  # encryption:
-  #   key: !secret api_encryption_key
 
 ota:
   - platform: esphome
-    # password: !secret ota_password
 
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
 
-# web_server:
-
 external_components:
+  # To deploy from the published component, comment the local source below and uncomment this:
   # - source: github://lassebm/ventilation-unit@main
   #   components: [ventilation_unit, ventilation_panel_bridge]
   - source:
@@ -52,8 +51,8 @@ uart:
     # debug:
   # Controller-side UART: controller panel-port TX/RX connects here.
   - id: controller_panel_uart
-    tx_pin: GPIO14
-    rx_pin: GPIO13
+    tx_pin: GPIO7
+    rx_pin: GPIO6
     baud_rate: 600
     # debug:
 
