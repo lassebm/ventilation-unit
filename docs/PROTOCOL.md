@@ -178,6 +178,25 @@ The firmware timer setup suggests one raw unit is 10 minutes, matching the app
 conversion of six raw units per hour. Any display as hours/months is
 consumer-side interpretation; the firmware register logic compares raw values.
 
+### Filter runtime counter rollover
+
+`0x53` is a 16-bit counter and the firmware increments it without any upper
+bound — it is not clamped at the interval or at any maximum. "Service due" is a
+plain unsigned comparison, `filter_runtime >= filter_replacement_interval`. So
+if the filter counter is left running past the interval and is never reset
+(no `0x54` command and no panel service-reset), it keeps climbing until it wraps
+`0xFFFF → 0x0000`. After the wrap `filter_runtime` is again below the interval,
+so the service-due status bit (reported as bit 0 of the panel status byte)
+**clears itself with no reset ever issued**, and the count restarts from zero.
+
+Counting only advances while a fan is turning, so the horizon is in fan-runtime,
+not wall-clock. At six raw units per hour the counter wraps at `65536 / 6 ≈
+10923` hours of runtime. With the default interval of `52560` (8760 h) the
+warning therefore appears at 8760 h and then silently disappears roughly
+`(65536 − 52560) / 6 ≈ 2163` hours (~90 days) of further runtime later; a larger
+interval shortens that window. Consumers that surface the filter-due state
+should latch it on their own rather than trusting it to persist until serviced.
+
 ### Tachometer calculation
 
 Registers `0x40` and `0x41` expose averaged pulse counters. The firmware does
