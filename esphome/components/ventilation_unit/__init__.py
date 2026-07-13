@@ -124,6 +124,10 @@ CONFIG_SCHEMA = (
                 accuracy_decimals=1,
                 device_class=DEVICE_CLASS_HUMIDITY,
                 state_class=STATE_CLASS_MEASUREMENT,
+                filters=[
+                    {"throttle_average": cv.TimePeriod(seconds=60)},
+                    {"round": 1},
+                ],
             ),
             cv.Optional(CONF_HUMIDITY_VOLTAGE): sensor.sensor_schema(
                 unit_of_measurement=UNIT_VOLT,
@@ -131,6 +135,10 @@ CONFIG_SCHEMA = (
                 device_class=DEVICE_CLASS_VOLTAGE,
                 state_class=STATE_CLASS_MEASUREMENT,
                 entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
+                filters=[
+                    {"throttle_average": cv.TimePeriod(seconds=60)},
+                    {"round": 2},
+                ],
             ),
             cv.Optional(CONF_INFLOW_RPM): sensor.sensor_schema(
                 unit_of_measurement=UNIT_REVOLUTIONS_PER_MINUTE,
