@@ -35,7 +35,8 @@ class VentilationPanelBridgeModeFan : public fan::Fan, public Component {
     // Keep the last speed/preset while standby/off so the UI restores it on the next turn-on.
     if (mode != 0) {
       this->speed = mode;
-      const auto &presets = this->get_traits().supported_preset_modes();
+      auto traits = this->get_traits();
+      const auto &presets = traits.supported_preset_modes();
       if (static_cast<size_t>(mode - 1) < presets.size())
         this->set_preset_mode_(presets[mode - 1]);
     }
@@ -258,7 +259,8 @@ inline void VentilationPanelBridgeModeFan::control(const fan::FanCall &call) {
     speed = *call.get_speed();
   // A preset selects one of the ordered speeds (presets alias speeds 1-3 in declared order).
   if (call.has_preset_mode()) {
-    const auto &presets = this->get_traits().supported_preset_modes();
+    auto traits = this->get_traits();
+    const auto &presets = traits.supported_preset_modes();
     for (size_t i = 0; i < presets.size(); i++) {
       if (std::strcmp(presets[i], call.get_preset_mode()) == 0) {
         speed = static_cast<int>(i) + 1;
