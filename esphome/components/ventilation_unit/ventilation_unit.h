@@ -11,6 +11,7 @@
 #include "esphome/components/usb_uart/usb_uart.h"
 #include "esphome/core/component.h"
 #include "esphome/core/log.h"
+#include <array>
 #include <cstdio>
 
 namespace esphome {
@@ -18,18 +19,18 @@ namespace ventilation_unit {
 
 class VentilationUnitComponent;
 
-class VentilationUnitNumber : public number::Number {
+class VentilationUnitNumber final : public number::Number {
  public:
-  void set_parent(VentilationUnitComponent *parent) { parent_ = parent; }
-  void set_register(uint8_t reg) { reg_ = reg; }
-  void set_scale(float scale) { scale_ = scale; }
-  void set_signed(bool signed_value) { signed_ = signed_value; }
+  void set_parent(VentilationUnitComponent *parent) { this->parent_ = parent; }
+  void set_register(uint8_t reg) { this->reg_ = reg; }
+  void set_scale(float scale) { this->scale_ = scale; }
+  void set_signed(bool signed_value) { this->signed_ = signed_value; }
 
-  uint8_t get_register() const { return reg_; }
+  uint8_t get_register() const { return this->reg_; }
   float from_raw(uint16_t raw) const {
-    if (signed_)
-      return static_cast<float>(static_cast<int16_t>(raw)) / scale_;
-    return static_cast<float>(raw) / scale_;
+    if (this->signed_)
+      return static_cast<float>(static_cast<int16_t>(raw)) / this->scale_;
+    return static_cast<float>(raw) / this->scale_;
   }
 
  protected:
@@ -41,10 +42,10 @@ class VentilationUnitNumber : public number::Number {
   bool signed_{false};
 };
 
-class VentilationUnitSwitch : public switch_::Switch {
+class VentilationUnitSwitch final : public switch_::Switch {
  public:
-  void set_parent(VentilationUnitComponent *parent) { parent_ = parent; }
-  void set_register(uint8_t reg) { reg_ = reg; }
+  void set_parent(VentilationUnitComponent *parent) { this->parent_ = parent; }
+  void set_register(uint8_t reg) { this->reg_ = reg; }
 
  protected:
   void write_state(bool state) override;
@@ -53,9 +54,9 @@ class VentilationUnitSwitch : public switch_::Switch {
   uint8_t reg_{0};
 };
 
-class VentilationUnitEditModeSwitch : public switch_::Switch {
+class VentilationUnitEditModeSwitch final : public switch_::Switch {
  public:
-  void set_parent(VentilationUnitComponent *parent) { parent_ = parent; }
+  void set_parent(VentilationUnitComponent *parent) { this->parent_ = parent; }
 
  protected:
   void write_state(bool state) override;
@@ -63,11 +64,11 @@ class VentilationUnitEditModeSwitch : public switch_::Switch {
   VentilationUnitComponent *parent_{nullptr};
 };
 
-class VentilationUnitButton : public button::Button {
+class VentilationUnitButton final : public button::Button {
  public:
-  void set_parent(VentilationUnitComponent *parent) { parent_ = parent; }
-  void set_register(uint8_t reg) { reg_ = reg; }
-  void set_value(uint16_t value) { value_ = value; }
+  void set_parent(VentilationUnitComponent *parent) { this->parent_ = parent; }
+  void set_register(uint8_t reg) { this->reg_ = reg; }
+  void set_value(uint16_t value) { this->value_ = value; }
 
  protected:
   void press_action() override;
@@ -77,36 +78,46 @@ class VentilationUnitButton : public button::Button {
   uint16_t value_{1};
 };
 
-class VentilationUnitComponent : public PollingComponent, public uart::UARTDevice {
+class VentilationUnitComponent final : public PollingComponent, public uart::UARTDevice {
  public:
-  void set_temperature_sensor(sensor::Sensor *sensor) { temperature_sensor_ = sensor; }
-  void set_humidity_sensor(sensor::Sensor *sensor) { humidity_sensor_ = sensor; }
-  void set_humidity_voltage_sensor(sensor::Sensor *sensor) { humidity_voltage_sensor_ = sensor; }
-  void set_inflow_rpm_sensor(sensor::Sensor *sensor) { inflow_rpm_sensor_ = sensor; }
-  void set_outflow_rpm_sensor(sensor::Sensor *sensor) { outflow_rpm_sensor_ = sensor; }
-  void set_force_input_binary_sensor(binary_sensor::BinarySensor *sensor) { force_input_binary_sensor_ = sensor; }
-  void set_bypass_binary_sensor(binary_sensor::BinarySensor *sensor) { bypass_binary_sensor_ = sensor; }
-  void set_edit_mode_switch(VentilationUnitEditModeSwitch *switch_) { edit_mode_switch_ = switch_; }
-  void set_bypass_hardware_present_switch(VentilationUnitSwitch *switch_) { bypass_hardware_present_switch_ = switch_; }
-  void set_bypass_polarity_invert_switch(VentilationUnitSwitch *switch_) { bypass_polarity_invert_switch_ = switch_; }
-  void set_filter_runtime_sensor(sensor::Sensor *sensor) { filter_runtime_sensor_ = sensor; }
+  void set_temperature_sensor(sensor::Sensor *sensor) { this->temperature_sensor_ = sensor; }
+  void set_humidity_sensor(sensor::Sensor *sensor) { this->humidity_sensor_ = sensor; }
+  void set_humidity_voltage_sensor(sensor::Sensor *sensor) { this->humidity_voltage_sensor_ = sensor; }
+  void set_inflow_rpm_sensor(sensor::Sensor *sensor) { this->inflow_rpm_sensor_ = sensor; }
+  void set_outflow_rpm_sensor(sensor::Sensor *sensor) { this->outflow_rpm_sensor_ = sensor; }
+  void set_force_input_binary_sensor(binary_sensor::BinarySensor *sensor) { this->force_input_binary_sensor_ = sensor; }
+  void set_bypass_binary_sensor(binary_sensor::BinarySensor *sensor) { this->bypass_binary_sensor_ = sensor; }
+  void set_edit_mode_switch(VentilationUnitEditModeSwitch *switch_) { this->edit_mode_switch_ = switch_; }
+  void set_bypass_hardware_present_switch(VentilationUnitSwitch *switch_) {
+    this->bypass_hardware_present_switch_ = switch_;
+  }
+  void set_bypass_polarity_invert_switch(VentilationUnitSwitch *switch_) {
+    this->bypass_polarity_invert_switch_ = switch_;
+  }
+  void set_filter_runtime_sensor(sensor::Sensor *sensor) { this->filter_runtime_sensor_ = sensor; }
   void set_filter_replacement_interval_number(VentilationUnitNumber *number) {
-    filter_replacement_interval_number_ = number;
+    this->filter_replacement_interval_number_ = number;
   }
-  void set_filter_replacement_reset_button(VentilationUnitButton *button) { filter_replacement_reset_button_ = button; }
+  void set_filter_replacement_reset_button(VentilationUnitButton *button) {
+    this->filter_replacement_reset_button_ = button;
+  }
   void set_freeze_protection_threshold_number(VentilationUnitNumber *number) {
-    freeze_protection_threshold_number_ = number;
+    this->freeze_protection_threshold_number_ = number;
   }
-  void set_humidity_boost_threshold_number(VentilationUnitNumber *number) { humidity_boost_threshold_number_ = number; }
+  void set_humidity_boost_threshold_number(VentilationUnitNumber *number) {
+    this->humidity_boost_threshold_number_ = number;
+  }
   void set_inflow_speed_setpoint_number(uint8_t index, VentilationUnitNumber *number) {
     if (index < SETPOINT_COUNT)
-      inflow_speed_setpoint_numbers_[index] = number;
+      this->inflow_speed_setpoint_numbers_[index] = number;
   }
   void set_outflow_speed_setpoint_number(uint8_t index, VentilationUnitNumber *number) {
     if (index < SETPOINT_COUNT)
-      outflow_speed_setpoint_numbers_[index] = number;
+      this->outflow_speed_setpoint_numbers_[index] = number;
   }
-  void set_firmware_version_text_sensor(text_sensor::TextSensor *sensor) { firmware_version_text_sensor_ = sensor; }
+  void set_firmware_version_text_sensor(text_sensor::TextSensor *sensor) {
+    this->firmware_version_text_sensor_ = sensor;
+  }
 
   void setup() override {
     ESP_LOGCONFIG(TAG, "Ventilation unit ready");
@@ -160,6 +171,9 @@ class VentilationUnitComponent : public PollingComponent, public uart::UARTDevic
     }
 
     switch (this->state_) {
+      case State::SENDING:
+        this->handle_sending_();
+        return;
       case State::RESET_HIGH_WAIT:
         this->handle_reset_high_wait_();
         return;
@@ -215,6 +229,7 @@ class VentilationUnitComponent : public PollingComponent, public uart::UARTDevic
  protected:
   enum class State : uint8_t {
     IDLE,
+    SENDING,
     RESET_HIGH_WAIT,
     RESET_LOW_WAIT,
     STARTUP_WAIT,
@@ -224,6 +239,9 @@ class VentilationUnitComponent : public PollingComponent, public uart::UARTDevic
     WAIT_SAVE,
     WAIT_FILTER_RUNTIME_READBACK,
   };
+
+  // What to do once the outgoing byte sequence has fully drained onto the wire.
+  enum class AfterSend : uint8_t { READ, DELAY };
 
   struct Command {
     uint8_t reg;
@@ -301,8 +319,8 @@ class VentilationUnitComponent : public PollingComponent, public uart::UARTDevic
   VentilationUnitButton *filter_replacement_reset_button_{nullptr};
   VentilationUnitNumber *freeze_protection_threshold_number_{nullptr};
   VentilationUnitNumber *humidity_boost_threshold_number_{nullptr};
-  VentilationUnitNumber *inflow_speed_setpoint_numbers_[SETPOINT_COUNT]{};
-  VentilationUnitNumber *outflow_speed_setpoint_numbers_[SETPOINT_COUNT]{};
+  std::array<VentilationUnitNumber *, SETPOINT_COUNT> inflow_speed_setpoint_numbers_{};
+  std::array<VentilationUnitNumber *, SETPOINT_COUNT> outflow_speed_setpoint_numbers_{};
   text_sensor::TextSensor *firmware_version_text_sensor_{nullptr};
   bool edit_mode_{false};
   bool application_ready_{false};
@@ -311,17 +329,25 @@ class VentilationUnitComponent : public PollingComponent, public uart::UARTDevic
   State state_{State::IDLE};
   uint32_t deadline_{0};
   uint32_t wait_until_{0};
-  uint8_t response_[81]{};
+  std::array<uint8_t, 81> response_{};
   size_t response_pos_{0};
   size_t response_len_{0};
   uint8_t current_reg_{0};
   uint8_t refresh_index_{0};
-  uint16_t register_cache_[256]{};
-  bool register_cache_valid_[256]{};
-  Command command_queue_[COMMAND_QUEUE_SIZE]{};
+  std::array<uint16_t, 256> register_cache_{};
+  std::array<bool, 256> register_cache_valid_{};
+  std::array<Command, COMMAND_QUEUE_SIZE> command_queue_{};
   uint8_t command_read_{0};
   uint8_t command_write_{0};
   Command current_command_{};
+  std::array<uint8_t, 5> tx_buf_{};
+  uint8_t tx_len_{0};
+  uint8_t tx_pos_{0};
+  uint32_t tx_next_byte_{0};
+  AfterSend after_send_{AfterSend::READ};
+  size_t after_read_len_{0};
+  uint32_t after_timeout_{0};
+  State after_state_{State::IDLE};
 
   bool parent_ready_() {
     if (!this->transport_ready_()) {
@@ -343,12 +369,37 @@ class VentilationUnitComponent : public PollingComponent, public uart::UARTDevic
       this->start_register_read_(REG_VERSION, State::WAIT_VERSION);
   }
 
-  void write_byte_slow_(uint8_t byte) {
-    // USB captures of the official app showed one transfer per protocol byte.
-    // Sending a whole command buffer can desync the unit firmware's parser.
-    this->write_byte(byte);
-    this->flush();
-    delay(INTER_BYTE_DELAY_MS);
+  // USB captures of the official app showed one USB transfer per protocol byte;
+  // bundling a whole command into one transfer can desync the controller's byte
+  // parser. So each byte is written and flushed on its own, spaced by at least
+  // INTER_BYTE_DELAY_MS. Bytes are pumped one per loop() iteration instead of
+  // with a blocking delay: the controller's parser is purely byte-driven and
+  // tolerates arbitrary gaps between bytes, so this keeps the wire behavior
+  // identical without blocking the main loop.
+  void begin_send_() {
+    this->tx_pos_ = 0;
+    this->tx_next_byte_ = millis();  // the first byte may go out on the next loop
+    this->state_ = State::SENDING;
+  }
+
+  void handle_sending_() {
+    if (!this->time_reached_(this->tx_next_byte_))
+      return;
+
+    if (this->tx_pos_ < this->tx_len_) {
+      this->write_byte(this->tx_buf_[this->tx_pos_++]);
+      this->flush();
+      this->tx_next_byte_ = millis() + INTER_BYTE_DELAY_MS;
+      return;
+    }
+
+    // All bytes are on the wire and the trailing inter-byte gap has elapsed.
+    if (this->after_send_ == AfterSend::READ) {
+      this->start_read_(this->after_read_len_, this->after_timeout_, this->after_state_);
+    } else {
+      this->wait_until_ = millis() + this->after_timeout_;
+      this->state_ = this->after_state_;
+    }
   }
 
   void start_app_reset_() {
@@ -492,20 +543,28 @@ class VentilationUnitComponent : public PollingComponent, public uart::UARTDevic
   void start_register_read_(uint8_t reg, State wait_state) {
     this->current_reg_ = reg;
     this->drain_();
-    this->write_byte_slow_(0xFF);
-    this->write_byte_slow_(0x01);
-    this->write_byte_slow_(reg);
-    this->start_read_(2, RESPONSE_TIMEOUT_MS, wait_state);
+    this->tx_buf_[0] = 0xFF;
+    this->tx_buf_[1] = 0x01;
+    this->tx_buf_[2] = reg;
+    this->tx_len_ = 3;
+    this->after_send_ = AfterSend::READ;
+    this->after_read_len_ = 2;
+    this->after_timeout_ = RESPONSE_TIMEOUT_MS;
+    this->after_state_ = wait_state;
+    this->begin_send_();
   }
 
   void start_register_write_(uint8_t reg, uint16_t value, State wait_state = State::WAIT_WRITE) {
-    this->write_byte_slow_(0xFF);
-    this->write_byte_slow_(0x00);
-    this->write_byte_slow_(reg);
-    this->write_byte_slow_((value >> 8) & 0xFF);
-    this->write_byte_slow_(value & 0xFF);
-    this->wait_until_ = millis() + 50;
-    this->state_ = wait_state;
+    this->tx_buf_[0] = 0xFF;
+    this->tx_buf_[1] = 0x00;
+    this->tx_buf_[2] = reg;
+    this->tx_buf_[3] = (value >> 8) & 0xFF;
+    this->tx_buf_[4] = value & 0xFF;
+    this->tx_len_ = 5;
+    this->after_send_ = AfterSend::DELAY;
+    this->after_timeout_ = 50;
+    this->after_state_ = wait_state;
+    this->begin_send_();
   }
 
   void handle_write_() {

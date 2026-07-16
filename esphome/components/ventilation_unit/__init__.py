@@ -201,7 +201,7 @@ CONFIG_SCHEMA = (
             cv.Optional(CONF_INFLOW_SPEED_SETPOINTS): speed_setpoints_schema(),
             cv.Optional(CONF_OUTFLOW_SPEED_SETPOINTS): speed_setpoints_schema(),
             cv.Optional(CONF_FIRMWARE_VERSION): text_sensor.text_sensor_schema(
-                entity_category="diagnostic"
+                entity_category=ENTITY_CATEGORY_DIAGNOSTIC
             ),
         }
     )

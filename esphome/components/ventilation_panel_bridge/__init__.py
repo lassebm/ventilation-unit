@@ -2,7 +2,13 @@ import esphome.codegen as cg
 from esphome.components import binary_sensor, fan, switch, uart
 from esphome.components.fan import validate_preset_modes
 import esphome.config_validation as cv
-from esphome.const import CONF_ID, CONF_PRESET_MODES, DEVICE_CLASS_PROBLEM, ICON_FAN
+from esphome.const import (
+    CONF_ID,
+    CONF_MODE,
+    CONF_PRESET_MODES,
+    DEVICE_CLASS_PROBLEM,
+    ICON_FAN,
+)
 
 DEPENDENCIES = ["uart"]
 AUTO_LOAD = ["binary_sensor", "fan", "switch"]
@@ -10,7 +16,6 @@ AUTO_LOAD = ["binary_sensor", "fan", "switch"]
 CONF_PANEL_UART_ID = "panel_uart_id"
 CONF_CONTROLLER_UART_ID = "controller_uart_id"
 CONF_PANEL_CONNECTED = "panel_connected"
-CONF_MODE = "mode"
 CONF_BYPASS = "bypass"
 CONF_FILTER_DUE = "filter_due"
 CONF_ALARM = "alarm"

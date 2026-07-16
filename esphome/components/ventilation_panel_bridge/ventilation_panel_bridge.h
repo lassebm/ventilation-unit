@@ -15,9 +15,9 @@ namespace ventilation_panel_bridge {
 
 class VentilationPanelBridgeComponent;
 
-class VentilationPanelBridgeModeFan : public fan::Fan, public Component {
+class VentilationPanelBridgeModeFan final : public fan::Fan, public Component {
  public:
-  void set_parent(VentilationPanelBridgeComponent *parent) { parent_ = parent; }
+  void set_parent(VentilationPanelBridgeComponent *parent) { this->parent_ = parent; }
 
   // Optional named presets; they alias the ordered speeds 1-3 in the order given.
   void set_preset_modes(std::initializer_list<const char *> presets) { this->set_supported_preset_modes(presets); }
@@ -53,9 +53,9 @@ class VentilationPanelBridgeModeFan : public fan::Fan, public Component {
   VentilationPanelBridgeComponent *parent_{nullptr};
 };
 
-class VentilationPanelBridgeBypassSwitch : public switch_::Switch {
+class VentilationPanelBridgeBypassSwitch final : public switch_::Switch {
  public:
-  void set_parent(VentilationPanelBridgeComponent *parent) { parent_ = parent; }
+  void set_parent(VentilationPanelBridgeComponent *parent) { this->parent_ = parent; }
 
  protected:
   void write_state(bool state) override;
@@ -63,15 +63,15 @@ class VentilationPanelBridgeBypassSwitch : public switch_::Switch {
   VentilationPanelBridgeComponent *parent_{nullptr};
 };
 
-class VentilationPanelBridgeComponent : public Component {
+class VentilationPanelBridgeComponent final : public Component {
  public:
-  void set_panel_uart(uart::UARTComponent *uart) { panel_uart_ = uart; }
-  void set_controller_uart(uart::UARTComponent *uart) { controller_uart_ = uart; }
-  void set_panel_connected(bool connected) { panel_connected_ = connected; }
-  void set_mode_fan(VentilationPanelBridgeModeFan *fan) { mode_fan_ = fan; }
-  void set_bypass_switch(VentilationPanelBridgeBypassSwitch *switch_) { bypass_switch_ = switch_; }
-  void set_filter_due_binary_sensor(binary_sensor::BinarySensor *sensor) { filter_due_binary_sensor_ = sensor; }
-  void set_alarm_binary_sensor(binary_sensor::BinarySensor *sensor) { alarm_binary_sensor_ = sensor; }
+  void set_panel_uart(uart::UARTComponent *uart) { this->panel_uart_ = uart; }
+  void set_controller_uart(uart::UARTComponent *uart) { this->controller_uart_ = uart; }
+  void set_panel_connected(bool connected) { this->panel_connected_ = connected; }
+  void set_mode_fan(VentilationPanelBridgeModeFan *fan) { this->mode_fan_ = fan; }
+  void set_bypass_switch(VentilationPanelBridgeBypassSwitch *switch_) { this->bypass_switch_ = switch_; }
+  void set_filter_due_binary_sensor(binary_sensor::BinarySensor *sensor) { this->filter_due_binary_sensor_ = sensor; }
+  void set_alarm_binary_sensor(binary_sensor::BinarySensor *sensor) { this->alarm_binary_sensor_ = sensor; }
 
   void setup() override {
     ESP_LOGCONFIG(TAG, "Ventilation panel bridge ready");
