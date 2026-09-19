@@ -1,8 +1,7 @@
 # AGENTS.md
 
-Guidance for coding agents (and contributors using them) working in this repo (`CLAUDE.md` is a
-symlink to this file). User-facing docs live in [README.md](README.md) and [docs/](docs/); this
-file is about *working on the code*.
+Guidance for coding agents (and contributors using them) working in this repo. User-facing docs
+live in [README.md](README.md) and [docs/](docs/); this file is about *working on the code*.
 
 ## What this is
 
