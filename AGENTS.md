@@ -70,6 +70,23 @@ If a tool isn't installed locally, run it ephemerally, e.g. `uvx ruff format .`,
 - **ESPHome config writes** are gated behind an `edit_mode` switch — off during normal operation.
 - Otherwise, match the style of the surrounding code and docs.
 
+## Keeping up with ESPHome releases
+
+When bringing the components up to a new ESPHome release (or fixing a break caused by one):
+
+- Read the release notes for **every** version since the last update, not just the latest. Start
+  with the blog posts on esphome.io (upgrade checklist, breaking changes, developer-facing changes),
+  and use the full changelogs or developers.esphome.io when you need more detail.
+- **Use the replacement upstream recommends.** Don't use a shim or a local workaround. When
+  something is removed, moved or deprecated, find what the release notes, the `ESPDEPRECATED`
+  message, or the header comments point to, and migrate to that. For example, use the stack-based
+  `*_to` / `snprintf` helpers instead of the heap-allocating ones now in `alloc_helpers.h`, and
+  `make_entity_preference<T>()` instead of raw `make_preference(get_object_id_hash() ^ …)`. A
+  successful compile isn't proof. Also check the headers for deprecations that still build.
+- Update the example config and the docs for any new YAML requirements.
+- Verify with a full `esphome compile` (check for warnings or deprecations from the components),
+  the Python tests, and the linters.
+
 ## Don't
 
 - Commit `esphome/secrets.yaml`, the `.esphome/` build cache, or anything under
