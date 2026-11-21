@@ -94,6 +94,8 @@ class VentilationUnitComponent final : public PollingComponent, public uart::UAR
     this->bypass_polarity_invert_switch_ = switch_;
   }
   void set_filter_runtime_sensor(sensor::Sensor *sensor) { this->filter_runtime_sensor_ = sensor; }
+  void set_filter_life_remaining_sensor(sensor::Sensor *sensor) { this->filter_life_remaining_sensor_ = sensor; }
+  void set_filter_remaining_hours_sensor(sensor::Sensor *sensor) { this->filter_remaining_hours_sensor_ = sensor; }
   void set_filter_replacement_interval_number(VentilationUnitNumber *number) {
     this->filter_replacement_interval_number_ = number;
   }
@@ -138,6 +140,8 @@ class VentilationUnitComponent final : public PollingComponent, public uart::UAR
     LOG_SWITCH("  ", "Bypass hardware present", this->bypass_hardware_present_switch_);
     LOG_SWITCH("  ", "Bypass polarity invert", this->bypass_polarity_invert_switch_);
     LOG_SENSOR("  ", "Filter runtime", this->filter_runtime_sensor_);
+    LOG_SENSOR("  ", "Filter life remaining", this->filter_life_remaining_sensor_);
+    LOG_SENSOR("  ", "Filter remaining hours", this->filter_remaining_hours_sensor_);
     LOG_NUMBER("  ", "Filter replacement interval", this->filter_replacement_interval_number_);
     LOG_BUTTON("  ", "Filter replacement reset", this->filter_replacement_reset_button_);
     LOG_NUMBER("  ", "Freeze protection threshold", this->freeze_protection_threshold_number_);
@@ -309,6 +313,8 @@ class VentilationUnitComponent final : public PollingComponent, public uart::UAR
   VentilationUnitSwitch *bypass_hardware_present_switch_{nullptr};
   VentilationUnitSwitch *bypass_polarity_invert_switch_{nullptr};
   sensor::Sensor *filter_runtime_sensor_{nullptr};
+  sensor::Sensor *filter_life_remaining_sensor_{nullptr};
+  sensor::Sensor *filter_remaining_hours_sensor_{nullptr};
   VentilationUnitNumber *filter_replacement_interval_number_{nullptr};
   VentilationUnitButton *filter_replacement_reset_button_{nullptr};
   VentilationUnitNumber *freeze_protection_threshold_number_{nullptr};
@@ -475,6 +481,26 @@ class VentilationUnitComponent final : public PollingComponent, public uart::UAR
     this->start_next_refresh_read_();
   }
 
+  // Derived from the controller's own counter (0x53) and interval (0x55), so it agrees with the
+  // service-due flag: due exactly when runtime >= interval. Like that flag, it jumps back up if the
+  // 16-bit counter wraps (see docs/PROTOCOL.md).
+  void publish_filter_remaining_() {
+    if (this->filter_life_remaining_sensor_ == nullptr && this->filter_remaining_hours_sensor_ == nullptr)
+      return;
+    if (!this->register_cache_valid_[REG_FILTER_RUNTIME] ||
+        !this->register_cache_valid_[REG_FILTER_REPLACEMENT_INTERVAL])
+      return;
+    const uint16_t runtime = this->register_cache_[REG_FILTER_RUNTIME];
+    const uint16_t interval = this->register_cache_[REG_FILTER_REPLACEMENT_INTERVAL];
+    const uint16_t remaining = runtime < interval ? interval - runtime : 0;
+    if (this->filter_life_remaining_sensor_ != nullptr) {
+      const float percent = interval == 0 ? 0.0f : 100.0f * static_cast<float>(remaining) / interval;
+      this->filter_life_remaining_sensor_->publish_state(percent);
+    }
+    if (this->filter_remaining_hours_sensor_ != nullptr)
+      this->filter_remaining_hours_sensor_->publish_state(static_cast<float>(remaining) / 6.0f);
+  }
+
   void publish_register_(uint8_t reg, uint16_t raw) {
     if (this->register_cache_valid_[reg] && this->register_cache_[reg] == raw) {
       this->status_clear_warning();
@@ -510,8 +536,10 @@ class VentilationUnitComponent final : public PollingComponent, public uart::UAR
     } else if (reg == REG_FILTER_RUNTIME) {
       if (this->filter_runtime_sensor_ != nullptr)
         this->filter_runtime_sensor_->publish_state(static_cast<float>(raw) / 6.0f);
+      this->publish_filter_remaining_();
     } else if (reg == REG_FILTER_REPLACEMENT_INTERVAL) {
       this->publish_number_(this->filter_replacement_interval_number_, raw);
+      this->publish_filter_remaining_();
     } else if (reg == REG_FREEZE_PROTECTION_THRESHOLD) {
       this->publish_number_(this->freeze_protection_threshold_number_, raw);
     } else if (reg == REG_HUMIDITY_BOOST_THRESHOLD) {

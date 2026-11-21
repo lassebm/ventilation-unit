@@ -81,6 +81,10 @@ ventilation_unit:
     name: Bypass Polarity Invert
   filter_runtime:
     name: Filter Runtime
+  filter_life_remaining:
+    name: Filter Life Remaining
+  filter_remaining_hours:
+    name: Filter Remaining Hours
   filter_replacement_interval:
     name: Filter Replacement Interval
   filter_replacement_reset:

@@ -82,6 +82,12 @@ commands.
   damper.
 - **Filter reset** — reset the filter counter with the filter-reset button on
   `ventilation_unit`, or from the physical panel.
+- **Filter life** — the optional `filter_life_remaining` (%) and
+  `filter_remaining_hours` sensors are computed from the controller's own filter
+  runtime and replacement interval, so they reach 0 exactly when the controller
+  flags the filter as due and reset along with it. Like the due flag, they jump
+  back up if the counter is left to wrap; see
+  [PROTOCOL.md](PROTOCOL.md#filter-runtime-counter-rollover).
 
 ## CLI tool
 

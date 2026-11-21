@@ -20,6 +20,7 @@ from esphome.const import (
     DEVICE_CLASS_VOLTAGE,
     ENTITY_CATEGORY_CONFIG,
     ENTITY_CATEGORY_DIAGNOSTIC,
+    ICON_AIR_FILTER,
     ICON_FAN,
     ICON_RESTART,
     ICON_TIMER,
@@ -44,6 +45,8 @@ CONF_EDIT_MODE = "edit_mode"
 CONF_BYPASS_HARDWARE_PRESENT = "bypass_hardware_present"
 CONF_BYPASS_POLARITY_INVERT = "bypass_polarity_invert"
 CONF_FILTER_RUNTIME = "filter_runtime"
+CONF_FILTER_LIFE_REMAINING = "filter_life_remaining"
+CONF_FILTER_REMAINING_HOURS = "filter_remaining_hours"
 CONF_FILTER_REPLACEMENT_INTERVAL = "filter_replacement_interval"
 CONF_FILTER_REPLACEMENT_RESET = "filter_replacement_reset"
 CONF_FREEZE_PROTECTION_THRESHOLD = "freeze_protection_threshold"
@@ -175,6 +178,18 @@ CONFIG_SCHEMA = (
                 icon=ICON_TIMER,
                 state_class=STATE_CLASS_MEASUREMENT,
             ),
+            cv.Optional(CONF_FILTER_LIFE_REMAINING): sensor.sensor_schema(
+                unit_of_measurement=UNIT_PERCENT,
+                accuracy_decimals=0,
+                icon=ICON_AIR_FILTER,
+                state_class=STATE_CLASS_MEASUREMENT,
+            ),
+            cv.Optional(CONF_FILTER_REMAINING_HOURS): sensor.sensor_schema(
+                unit_of_measurement=UNIT_HOUR,
+                accuracy_decimals=1,
+                icon=ICON_TIMER,
+                state_class=STATE_CLASS_MEASUREMENT,
+            ),
             cv.Optional(CONF_FILTER_REPLACEMENT_INTERVAL): number.number_schema(
                 VentilationUnitNumber,
                 unit_of_measurement=UNIT_HOUR,
@@ -255,6 +270,12 @@ async def to_code(config):
     if filter_runtime_config := config.get(CONF_FILTER_RUNTIME):
         sens = await sensor.new_sensor(filter_runtime_config)
         cg.add(var.set_filter_runtime_sensor(sens))
+    if filter_life_remaining_config := config.get(CONF_FILTER_LIFE_REMAINING):
+        sens = await sensor.new_sensor(filter_life_remaining_config)
+        cg.add(var.set_filter_life_remaining_sensor(sens))
+    if filter_remaining_hours_config := config.get(CONF_FILTER_REMAINING_HOURS):
+        sens = await sensor.new_sensor(filter_remaining_hours_config)
+        cg.add(var.set_filter_remaining_hours_sensor(sens))
     if filter_replacement_interval_config := config.get(
         CONF_FILTER_REPLACEMENT_INTERVAL
     ):
