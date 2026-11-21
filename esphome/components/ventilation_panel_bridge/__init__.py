@@ -78,7 +78,7 @@ async def to_code(config):
         await cg.register_component(mode_fan, mode_config)
         cg.add(mode_fan.set_parent(var))
         if preset_modes := mode_config.get(CONF_PRESET_MODES):
-            cg.add(mode_fan.set_preset_modes(preset_modes))
+            fan.set_preset_modes(mode_fan, preset_modes)
         cg.add(var.set_mode_fan(mode_fan))
 
     if bypass_config := config.get(CONF_BYPASS):

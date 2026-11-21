@@ -7,7 +7,6 @@
 #include "esphome/components/switch/switch.h"
 #include "esphome/components/text_sensor/text_sensor.h"
 #include "esphome/components/uart/uart.h"
-#include "esphome/components/usb_host/usb_host.h"
 #include "esphome/components/usb_uart/usb_uart.h"
 #include "esphome/core/component.h"
 #include "esphome/core/log.h"
@@ -268,11 +267,6 @@ class VentilationUnitComponent final : public PollingComponent, public uart::UAR
   static constexpr uint8_t REG_FREEZE_PROTECTION_THRESHOLD = 0x70;
   static constexpr uint8_t REG_HUMIDITY_BOOST_THRESHOLD = 0x72;
   static constexpr uint8_t REG_VERSION = 0xFF;
-  static constexpr uint8_t CP210X_SET_MHS = 0x07;
-  static constexpr uint16_t CP210X_CONTROL_DTR = 0x0001;
-  static constexpr uint16_t CP210X_CONTROL_RTS = 0x0002;
-  static constexpr uint16_t CP210X_CONTROL_WRITE_DTR = 0x0100;
-  static constexpr uint16_t CP210X_CONTROL_WRITE_RTS = 0x0200;
   static constexpr uint32_t INTER_BYTE_DELAY_MS = 2;
   static constexpr uint32_t RESPONSE_TIMEOUT_MS = 2000;
   static constexpr uint32_t RESET_PULSE_MS = 400;
@@ -405,9 +399,9 @@ class VentilationUnitComponent final : public PollingComponent, public uart::UAR
   void start_app_reset_() {
     ESP_LOGI(TAG, "Resetting ventilation controller into application");
     this->reset_attempted_ = true;
-    this->drain_();
+    this->discard_available();
     // RTS low keeps BOOT0 low. DTR high asserts NRST low.
-    this->set_cp210x_modem_(true, false);
+    this->set_modem_lines_(true, false);
     this->wait_until_ = millis() + RESET_PULSE_MS;
     this->state_ = State::RESET_HIGH_WAIT;
   }
@@ -415,7 +409,7 @@ class VentilationUnitComponent final : public PollingComponent, public uart::UAR
   void handle_reset_high_wait_() {
     if (!this->time_reached_(this->wait_until_))
       return;
-    this->set_cp210x_modem_(false, false);
+    this->set_modem_lines_(false, false);
     this->wait_until_ = millis() + RESET_PULSE_MS;
     this->state_ = State::RESET_LOW_WAIT;
   }
@@ -423,7 +417,7 @@ class VentilationUnitComponent final : public PollingComponent, public uart::UAR
   void handle_reset_low_wait_() {
     if (!this->time_reached_(this->wait_until_))
       return;
-    this->drain_();
+    this->discard_available();
     this->wait_until_ = millis() + STARTUP_DELAY_MS;
     this->state_ = State::STARTUP_WAIT;
   }
@@ -542,7 +536,7 @@ class VentilationUnitComponent final : public PollingComponent, public uart::UAR
 
   void start_register_read_(uint8_t reg, State wait_state) {
     this->current_reg_ = reg;
-    this->drain_();
+    this->discard_available();
     this->tx_buf_[0] = 0xFF;
     this->tx_buf_[1] = 0x01;
     this->tx_buf_[2] = reg;
@@ -660,30 +654,10 @@ class VentilationUnitComponent final : public PollingComponent, public uart::UAR
 
   bool time_reached_(uint32_t deadline) const { return static_cast<int32_t>(millis() - deadline) >= 0; }
 
-  void set_cp210x_modem_(bool dtr, bool rts) {
-#if defined(USE_ESP32_VARIANT_ESP32P4) || defined(USE_ESP32_VARIANT_ESP32S2) || defined(USE_ESP32_VARIANT_ESP32S3)
-    auto *channel = static_cast<usb_uart::USBUartChannel *>(this->parent_);
-    auto *usb = channel->get_parent();
-    if (usb == nullptr)
-      return;
-
-    uint16_t value = CP210X_CONTROL_WRITE_DTR | CP210X_CONTROL_WRITE_RTS;
-    if (dtr)
-      value |= CP210X_CONTROL_DTR;
-    if (rts)
-      value |= CP210X_CONTROL_RTS;
-
-    usb_host::transfer_cb_t callback = [](const usb_host::TransferStatus &status) {
-      if (!status.success)
-        ESP_LOGW(TAG, "CP210x modem control transfer failed: %s", esp_err_to_name(status.error_code));
-    };
-    usb->control_transfer(usb_uart::USB_VENDOR_IFC | usb_host::USB_DIR_OUT, CP210X_SET_MHS, value, 0, callback);
-#endif
-  }
-
-  void drain_() {
-    while (this->available())
-      this->read();
+  void set_modem_lines_(bool dtr, bool rts) {
+    auto *channel = static_cast<usb_uart::USBUartChannelBase *>(this->parent_);
+    if (!channel->set_modem_control(dtr, rts))
+      ESP_LOGW(TAG, "USB serial not connected; DTR/RTS not set");
   }
 };
 

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstring>
-#include <initializer_list>
 
 #include "esphome/components/binary_sensor/binary_sensor.h"
 #include "esphome/components/fan/fan.h"
@@ -18,9 +17,6 @@ class VentilationPanelBridgeComponent;
 class VentilationPanelBridgeModeFan final : public fan::Fan, public Component {
  public:
   void set_parent(VentilationPanelBridgeComponent *parent) { this->parent_ = parent; }
-
-  // Optional named presets; they alias the ordered speeds 1-3 in the order given.
-  void set_preset_modes(std::initializer_list<const char *> presets) { this->set_supported_preset_modes(presets); }
 
   fan::FanTraits get_traits() override {
     this->wire_preset_modes_(this->traits_);
