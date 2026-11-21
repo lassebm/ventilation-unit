@@ -48,15 +48,20 @@ The controller exposes two independent application-level UARTs — keep them str
 
 ## Formatting & linting
 
-Mirrors upstream ESPHome's toolchain (configs at the repo root) — **run these before committing;
-there is no CI to catch misses:**
+Mirrors upstream ESPHome's toolchain. The configs (`.clang-format`, `.yamllint`, and the ruff
+sections of `pyproject.toml`) are copies of upstream's, and the tool versions are pinned to
+upstream's. **Run these before committing.** There is no CI to catch misses:
 
-- **C++** — `clang-format -i esphome/components/*/*.h` (uses `.clang-format`).
-- **Python** — `ruff format . && ruff check .` (uses `pyproject.toml`).
-- **YAML** — `yamllint .` (uses `.yamllint`).
+- **C++** — `uvx --from clang-format==23.1.3 clang-format -i esphome/components/*/*.h`
+- **Python** — `uvx ruff@0.17.5 format . && uvx ruff@0.17.5 check .`
+- **YAML** — `uvx yamllint@1.38.0 .`
 
-If a tool isn't installed locally, run it ephemerally, e.g. `uvx ruff format .`, `uvx yamllint .`,
-`uvx --from clang-format clang-format -i …`.
+Use these pinned versions, not whatever is installed locally or the latest release. A newer tool can
+stabilize a lint rule or reformat code, which changes results without any change here. After
+touching register or scaling code, also re-run the Python tests above.
+
+If a linter flags something new, check upstream's config before changing code. Upstream may already
+ignore the rule. Sync the config rather than working around it.
 
 ## Conventions (keep consistent)
 
@@ -84,6 +89,12 @@ When bringing the components up to a new ESPHome release (or fixing a break caus
   `make_entity_preference<T>()` instead of raw `make_preference(get_object_id_hash() ^ …)`. A
   successful compile isn't proof. Also check the headers for deprecations that still build.
 - Update the example config and the docs for any new YAML requirements.
+- Re-sync the tooling from upstream's `dev` branch:
+  - Update the pinned versions in "Formatting & linting" from `requirements_test.txt` (ruff) and
+    `requirements_dev.txt` (clang-format, yamllint).
+  - Diff `.clang-format`, `.yamllint`, and the ruff sections of `pyproject.toml` against upstream's
+    and adopt the changes.
+  - Re-run the formatters and linters.
 - Verify with a full `esphome compile` (check for warnings or deprecations from the components),
   the Python tests, and the linters.
 
