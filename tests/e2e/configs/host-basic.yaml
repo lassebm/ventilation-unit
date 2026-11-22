@@ -8,9 +8,15 @@ host:
 
 logger:
   level: DEBUG
+  boot_log_buffer_size: 2048
+  boot_logs:
+    ventilation_unit: INFO
 
 api:
   port: ${api_port}
+  on_client_connected:  # as in the example config
+    - delay: 2s
+    - logger.replay_boot_logs:
 
 external_components:
   - source:

@@ -13,11 +13,24 @@ esp32:
 logger:
   hardware_uart: UART0
   baud_rate: 115200
+  # Keep the log from before the first client connects (warnings, plus ventilation_unit's INFO
+  # lines: controller reset and firmware version) and replay it to the open log viewers whenever a
+  # client connects (see api: below), so a boot-time problem stays visible.
+  boot_log_buffer_size: 2048
+  boot_logs:
+    ventilation_unit: INFO
 
 api:
+  encryption:
+    key: !secret api_encryption_key
+  on_client_connected:
+    - delay: 2s  # the client subscribes to logs just after connecting
+    - logger.replay_boot_logs:
 
 ota:
   - platform: esphome
+    # Encrypted OTA, using the api key above.
+    encryption:
 
 wifi:
   ssid: !secret wifi_ssid
@@ -35,6 +48,10 @@ usb_uart:
   - type: CP210X
     vid: 0x10C4
     pid: 0xEA61
+    # Optional: also match the adapter's USB descriptor strings (useful only if more than one
+    # CP210x could be attached), e.g. manufacturer: "Silicon Labs".
+    # manufacturer: "..."
+    # product: "..."
     channels:
       - id: controller_usb_uart
         baud_rate: 38400

@@ -13,6 +13,8 @@ import pytest
 
 REPO = Path(__file__).resolve().parents[1]
 EXAMPLE = REPO / "esphome" / "ventilation-unit.yaml"
+# A fixed dummy key: a random one would change the generated main.cpp, forcing a rebuild each run.
+TEST_KEY = "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8="
 COMPONENT_DIRS = ("ventilation_unit", "ventilation_panel_bridge")
 
 
@@ -22,7 +24,10 @@ def test_compile_example() -> None:
     work = REPO / "tests" / ".build" / "compile"
     work.mkdir(parents=True, exist_ok=True)
     shutil.copy(EXAMPLE, work / EXAMPLE.name)
-    shutil.copy(REPO / "esphome" / "secrets.yaml.example", work / "secrets.yaml")
+    (work / "secrets.yaml").write_text(
+        f'wifi_ssid: "test"\nwifi_password: "test-password"\napi_encryption_key: "{TEST_KEY}"\n',
+        encoding="utf-8",
+    )
     link = work / "components"
     if (
         link.is_symlink() and not link.exists()

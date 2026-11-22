@@ -19,9 +19,11 @@ import threading
 import time
 from typing import Any
 
-from aioesphomeapi import APIClient, EntityInfo, EntityState
+from aioesphomeapi import APIClient, EntityInfo, EntityState, LogLevel
 
 ANSI = re.compile(r"\x1b\[[0-9;]*m")
+# The boot-log replay repeats earlier lines with an "@<ms>ms" marker after the timestamp.
+REPLAY = re.compile(r"^\[[^\]]*\]@\d+ms ")
 
 
 def slug(name: str) -> str:
@@ -91,7 +93,9 @@ class Node:
         self.prefdir = prefdir
         self.proc: subprocess.Popen[str] | None = None
         self.client: APIClient | None = None
-        self.log: list[str] = []
+        self.log: list[str] = []  # the node's console output
+        # Log lines received over the API, as a log viewer sees them.
+        self.api_log: list[str] = []
         self.infos: dict[str, EntityInfo] = {}
         self.states: dict[str, EntityState] = {}
         self._by_key: dict[tuple[int, int], str] = {}
@@ -136,6 +140,9 @@ class Node:
             self.infos[name] = e
             self._by_key[(e.device_id, e.key)] = name
         self.client.subscribe_states(self._on_state)
+        self.client.subscribe_logs(
+            self._on_api_log, log_level=LogLevel.LOG_LEVEL_DEBUG, dump_config=False
+        )
         return self
 
     async def stop(self) -> None:
@@ -156,6 +163,9 @@ class Node:
         assert self.proc is not None and self.proc.stdout is not None
         for line in self.proc.stdout:
             self.log.append(ANSI.sub("", line.rstrip("\n")))
+
+    def _on_api_log(self, msg: Any) -> None:
+        self.api_log.append(ANSI.sub("", msg.message.decode("utf-8", "replace")))
 
     def _on_state(self, s: EntityState) -> None:
         name = self._by_key.get((s.device_id, s.key))
@@ -202,7 +212,7 @@ class Node:
     ) -> str:
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
-            for line in list(self.log):
+            for line in self.live_log():
                 if (
                     needle.search(line)
                     if isinstance(needle, re.Pattern)
@@ -214,8 +224,12 @@ class Node:
             f"log line {needle!r} not seen; tail:\n" + "\n".join(self.log[-30:])
         )
 
+    def live_log(self) -> list[str]:
+        """The console log without boot-log replay lines, so each event counts once."""
+        return [line for line in list(self.log) if not REPLAY.match(line)]
+
     def log_has(self, needle: str) -> bool:
-        return any(needle in line for line in self.log)
+        return any(needle in line for line in self.live_log())
 
     # --- commands ----------------------------------------------------------------------------
     def _target(self, name: str) -> dict[str, int]:

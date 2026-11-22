@@ -22,6 +22,11 @@ async def wait_until(pred, timeout: float = 5.0) -> None:
     raise AssertionError("condition not met in time")
 
 
+def connects(node) -> int:
+    """How many times the node has (re)connected to the controller firmware."""
+    return sum("Connected to ventilation firmware" in line for line in node.live_log())
+
+
 # --- ventilation_unit (USB register link) ---------------------------------------------------
 
 
@@ -115,7 +120,7 @@ async def test_disabling_edit_mode_drops_queued_writes(rig):
     await n.wait_for("edit_mode", False)
     rig.unit.responding = True
     await wait_until(
-        lambda: sum("Connected to ventilation firmware" in line for line in n.log) >= 2,
+        lambda: connects(n) >= 2,
         timeout=15,
     )
     await asyncio.sleep(1.5)  # a full refresh cycle after reconnecting
@@ -143,7 +148,7 @@ async def test_reconnects_after_link_loss(rig):
     await n.wait_log("did not answer register", timeout=8)
     rig.unit.responding = True
     await wait_until(
-        lambda: sum("Connected to ventilation firmware" in line for line in n.log) >= 2,
+        lambda: connects(n) >= 2,
         timeout=15,
     )
 

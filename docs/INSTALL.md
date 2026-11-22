@@ -28,8 +28,11 @@ physical panel is connected, then compile and upload:
 esphome run esphome/ventilation-unit.yaml
 ```
 
-`esphome/secrets.yaml` is gitignored and local-only; keep your Wi-Fi credentials
-there.
+`esphome/secrets.yaml` is gitignored and local-only. Copy
+`esphome/secrets.yaml.example` and fill in your Wi-Fi credentials and an
+`api_encryption_key` (generate one with `openssl rand -base64 32`). The example
+encrypts the native API and OTA updates with that key, and Home Assistant asks for
+it when you add the device.
 
 ## Entities and control
 
