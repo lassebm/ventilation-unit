@@ -115,7 +115,7 @@ low-level writes.
 ## Development checks
 
 ```sh
-python3 -m unittest discover -s cli/tests -t cli
+script/test          # CLI tests, config validation, and host end-to-end tests (needs uv)
+script/test --all    # plus a full ESP32-S3 compile of the example config
 python3 -m py_compile cli/ventilation_unit.py
-esphome compile esphome/ventilation-unit.yaml
 ```

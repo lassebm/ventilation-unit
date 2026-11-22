@@ -1,0 +1,2 @@
+# Present so ESPHome doesn't generate its own here; the root .gitignore covers the build cache.
+/.esphome/

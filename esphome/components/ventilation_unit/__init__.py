@@ -31,8 +31,12 @@ from esphome.const import (
     UNIT_REVOLUTIONS_PER_MINUTE,
     UNIT_VOLT,
 )
+from esphome.core import CORE
 
-DEPENDENCIES = ["usb_uart"]
+# The controller link is a usb_uart channel (CP210X) on the ESP32. On the `host` platform any
+# serial port works instead (a USB-serial adapter on a Linux box, or the test suite's pty), so the
+# hard dependency is just `uart`; the uart_id validator below picks the right class.
+DEPENDENCIES = ["uart"]
 AUTO_LOAD = ["binary_sensor", "button", "number", "sensor", "switch", "text_sensor"]
 
 # CONF_TEMPERATURE and CONF_HUMIDITY are imported from esphome.const.
@@ -87,6 +91,12 @@ VentilationUnitEditModeSwitch = ventilation_unit_ns.class_(
 VentilationUnitButton = ventilation_unit_ns.class_(
     "VentilationUnitButton", button.Button
 )
+
+
+def _uart_id(value):
+    if CORE.is_host:
+        return cv.use_id(uart.UARTComponent)(value)
+    return cv.use_id(usb_uart.USBUartChannel)(value)
 
 
 def setpoint_schema():
@@ -221,9 +231,7 @@ CONFIG_SCHEMA = (
         }
     )
     .extend(cv.polling_component_schema("30s"))
-    .extend(
-        cv.Schema({cv.GenerateID(CONF_UART_ID): cv.use_id(usb_uart.USBUartChannel)})
-    )
+    .extend(cv.Schema({cv.GenerateID(CONF_UART_ID): _uart_id}))
 )
 
 

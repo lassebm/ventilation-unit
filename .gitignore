@@ -8,3 +8,7 @@
 /enclosure/*.stl
 __pycache__/
 secrets.yaml
+
+# Test-suite build output
+/tests/.build/
+.pytest_cache/

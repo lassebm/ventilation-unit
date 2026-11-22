@@ -1,0 +1,92 @@
+# Host-platform build for the end-to-end tests: the firmware runs natively and its three serial
+# links are pseudo-terminals driven by the simulators in tests/e2e/vent_sim.py.
+esphome:
+  name: ventilation-unit-test
+  friendly_name: "Ventilation Test"
+
+host:
+
+logger:
+  level: DEBUG
+
+api:
+  port: ${api_port}
+
+external_components:
+  - source:
+      type: local
+      path: ../../../esphome/components
+
+uart:
+  - id: controller_usb_uart
+    port: ${usb_port}
+    baud_rate: 38400
+  - id: panel_uart
+    port: ${panel_port}
+    baud_rate: 600
+  - id: controller_panel_uart
+    port: ${ctrl_port}
+    baud_rate: 600
+
+ventilation_unit:
+  uart_id: controller_usb_uart
+  update_interval: 1s
+  temperature:
+    name: Temperature
+  humidity:
+    name: Humidity
+    filters: []
+  humidity_voltage:
+    name: Humidity Voltage
+    filters: []
+  inflow_rpm:
+    name: Inflow RPM
+  outflow_rpm:
+    name: Outflow RPM
+  force_input:
+    name: Force Input
+  bypass_state:
+    name: Bypass State
+  edit_mode:
+    name: Edit Mode
+  bypass_hardware_present:
+    name: Bypass Hardware Present
+  bypass_polarity_invert:
+    name: Bypass Polarity Invert
+  filter_runtime:
+    name: Filter Runtime
+  filter_life_remaining:
+    name: Filter Life Remaining
+  filter_remaining_hours:
+    name: Filter Remaining Hours
+  filter_replacement_interval:
+    name: Filter Replacement Interval
+  filter_replacement_reset:
+    name: Filter Replacement Reset
+  freeze_protection_threshold:
+    name: Freeze Protection Threshold
+  humidity_boost_threshold:
+    name: Humidity Boost Threshold
+  inflow_speed_setpoints:
+    speed_1:
+      name: Inflow Speed 1
+    humidity_boost:
+      name: Inflow Humidity Boost
+  outflow_speed_setpoints:
+    speed_3:
+      name: Outflow Speed 3
+  firmware_version:
+    name: Firmware Version
+
+ventilation_panel_bridge:
+  panel_uart_id: panel_uart
+  controller_uart_id: controller_panel_uart
+  panel_connected: true
+  mode:
+    name: Mode
+  bypass:
+    name: Bypass
+  filter_due:
+    name: Filter Due
+  alarm:
+    name: Alarm

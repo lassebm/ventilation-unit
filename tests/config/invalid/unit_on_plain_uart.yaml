@@ -1,0 +1,6 @@
+# expect-error: usb_uart::USBUartChannel
+packages:
+  base: !include ../base.yaml
+
+ventilation_unit:
+  uart_id: panel_uart

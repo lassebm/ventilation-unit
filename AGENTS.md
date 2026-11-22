@@ -24,6 +24,9 @@ device behavior — see the README for the full picture.
 - `esphome/ventilation-unit.yaml` — the example / bring-up config. `esphome/secrets.yaml` is
   gitignored and local-only.
 - `cli/tests/` — unittest suite for CLI parsing, value scaling, and write guards.
+- `tests/` — the component test suite (see Build & test): `config/` (`esphome config` fixtures),
+  `e2e/` (host build + simulated controller links), and the pytest drivers. `script/test` runs it
+  together with `cli/tests/`.
 - `reverse-engineering/` — **gitignored, local-only.** Firmware dumps, Ghidra analysis, Renode
   emulation, captures, RE notes. Never published; never reference these files from tracked code or docs.
 
@@ -34,12 +37,30 @@ The controller exposes two independent application-level UARTs — keep them str
 - **USB/PC link** via CP210x bridge at `38400 8N1` — used by `cli/ventilation_unit.py` and the
   `ventilation_unit` component. Needs the CP210x modem-control lines to reset the STM32 into
   application mode, so it requires ESPHome `usb_uart` (a plain GPIO `uart` will not work) and an
-  ESP32 with a USB host interface (e.g. an ESP32-S3).
+  ESP32 with a USB host interface (e.g. an ESP32-S3). The one exception is the `host` platform,
+  where any serial port works. The test suite relies on that. Its simulator runs on a pty, which
+  has no modem lines, so the reset sequence isn't exercised there (the component logs that DTR/RTS
+  couldn't be set and carries on).
 - **Front panel UART** at `600 8N1` — used by `ventilation_panel_bridge`.
 
 ## Build & test
 
-- Python tests (no hardware needed): `python3 -m unittest discover -s cli/tests -t cli`
+- **Test suite (no hardware needed):** `script/test`. It needs `uv` and a C++ compiler, and pins its
+  Python deps (ESPHome included) in `tests/requirements.txt`. It runs:
+  - `cli/tests/`: the CLI unittest suite. It still runs standalone with
+    `python3 -m unittest discover -s cli/tests -t cli`.
+  - `tests/config/`: `esphome config` on fixtures. `valid/` must pass; each `invalid/` file must
+    fail with the message on its `# expect-error:` first line.
+  - `tests/e2e/`: both components built for ESPHome's `host` platform. Their three serial links are
+    pseudo-terminals driven by simulators (`vent_sim.py`: the USB register protocol plus both ends
+    of the panel link), checked over the native API (`aioesphomeapi`). The simulators model
+    docs/PROTOCOL.md, so they catch regressions in the components, not protocol
+    misunderstandings. Hardware still has the final say.
+  - `script/test --all` also compiles the example config for the ESP32-S3 and fails on compiler
+    warnings in the components. It's slow the first time while the toolchain downloads.
+  - Extra arguments go to pytest, e.g. `script/test -k bypass`.
+- When you change component behaviour, add or extend an e2e test. When you add a config option or a
+  validation rule, add a config fixture.
 - CLI (`uv` pulls in `pyserial` on the fly):
   `uv run --with pyserial cli/ventilation_unit.py --help`
 - Compile checks:
@@ -58,7 +79,7 @@ upstream's. **Run these before committing.** There is no CI to catch misses:
 
 Use these pinned versions, not whatever is installed locally or the latest release. A newer tool can
 stabilize a lint rule or reformat code, which changes results without any change here. After
-touching register or scaling code, also re-run the Python tests above.
+touching register or scaling code, also re-run the test suite (`script/test`).
 
 If a linter flags something new, check upstream's config before changing code. Upstream may already
 ignore the rule. Sync the config rather than working around it.
@@ -96,7 +117,7 @@ When bringing the components up to a new ESPHome release (or fixing a break caus
     and adopt the changes.
   - Re-run the formatters and linters.
 - Verify with a full `esphome compile` (check for warnings or deprecations from the components),
-  the Python tests, and the linters.
+  the test suite (`script/test --all`), and the linters.
 
 ## Don't
 

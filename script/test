@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Run the test suite: CLI unit tests, config validation, and host end-to-end tests.
+#   script/test            # everything except the slow ESP32 compile
+#   script/test --all      # also compile the example config for the real target
+#   script/test -k bypass  # extra args go to pytest
+# Needs uv (https://docs.astral.sh/uv/) and a C++ compiler; Python deps are pinned in
+# tests/requirements.txt.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+args=()
+for a in "$@"; do
+  if [[ "$a" == "--all" ]]; then args+=(-m "compile or not compile"); else args+=("$a"); fi
+done
+exec uv run --no-project --python 3.13 --with-requirements tests/requirements.txt \
+  pytest "${args[@]+"${args[@]}"}"

@@ -1,0 +1,5 @@
+# Test-suite dependencies (see AGENTS.md, "Build & test"). Keep esphome pinned to the release the
+# component targets; bump together with the "Keeping up with ESPHome releases" checklist.
+esphome==2026.11.0
+pytest==9.2.0
+pytest-asyncio==1.5.0

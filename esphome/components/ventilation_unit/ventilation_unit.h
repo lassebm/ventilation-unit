@@ -7,7 +7,11 @@
 #include "esphome/components/switch/switch.h"
 #include "esphome/components/text_sensor/text_sensor.h"
 #include "esphome/components/uart/uart.h"
+#ifdef USE_HOST
+#include "esphome/components/uart/uart_component_host.h"
+#else
 #include "esphome/components/usb_uart/usb_uart.h"
+#endif
 #include "esphome/core/component.h"
 #include "esphome/core/log.h"
 #include <array>
@@ -683,7 +687,11 @@ class VentilationUnitComponent final : public PollingComponent, public uart::UAR
   bool time_reached_(uint32_t deadline) const { return static_cast<int32_t>(millis() - deadline) >= 0; }
 
   void set_modem_lines_(bool dtr, bool rts) {
+#ifdef USE_HOST
+    auto *channel = static_cast<uart::HostUartComponent *>(this->parent_);
+#else
     auto *channel = static_cast<usb_uart::USBUartChannelBase *>(this->parent_);
+#endif
     if (!channel->set_modem_control(dtr, rts))
       ESP_LOGW(TAG, "USB serial not connected; DTR/RTS not set");
   }

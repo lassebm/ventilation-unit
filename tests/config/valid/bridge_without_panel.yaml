@@ -1,0 +1,9 @@
+packages:
+  base: !include ../base.yaml
+
+ventilation_panel_bridge:
+  controller_uart_id: controller_panel_uart
+  panel_connected: false
+  mode:
+    name: Mode
+    preset_modes: [Low, Medium, High]
