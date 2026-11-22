@@ -39,8 +39,8 @@ The controller exposes two independent application-level UARTs — keep them str
   application mode, so it requires ESPHome `usb_uart` (a plain GPIO `uart` will not work) and an
   ESP32 with a USB host interface (e.g. an ESP32-S3). The one exception is the `host` platform,
   where any serial port works. The test suite relies on that. Its simulator runs on a pty, which
-  has no modem lines, so the reset sequence isn't exercised there (the component logs that DTR/RTS
-  couldn't be set and carries on).
+  has no modem lines, so DTR/RTS don't actually toggle there (the component logs that and carries
+  on); the tests check the reset sequence the component requests, from its debug log.
 - **Front panel UART** at `600 8N1` — used by `ventilation_panel_bridge`.
 
 ## Build & test

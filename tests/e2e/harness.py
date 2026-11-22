@@ -94,6 +94,7 @@ class Node:
         self.proc: subprocess.Popen[str] | None = None
         self.client: APIClient | None = None
         self.log: list[str] = []  # the node's console output
+        self.log_times: list[float] = []  # time.monotonic() when each log line arrived
         # Log lines received over the API, as a log viewer sees them.
         self.api_log: list[str] = []
         self.infos: dict[str, EntityInfo] = {}
@@ -162,6 +163,9 @@ class Node:
     def _read_output(self) -> None:
         assert self.proc is not None and self.proc.stdout is not None
         for line in self.proc.stdout:
+            self.log_times.append(
+                time.monotonic()
+            )  # before the line, so its index is valid
             self.log.append(ANSI.sub("", line.rstrip("\n")))
 
     def _on_api_log(self, msg: Any) -> None:
@@ -227,6 +231,14 @@ class Node:
     def live_log(self) -> list[str]:
         """The console log without boot-log replay lines, so each event counts once."""
         return [line for line in list(self.log) if not REPLAY.match(line)]
+
+    def log_lines(self, needle: str) -> list[tuple[float, str]]:
+        """(arrival time, line) for every live log line containing `needle`, oldest first."""
+        return [
+            (t, line)
+            for t, line in zip(self.log_times, self.log, strict=False)
+            if needle in line and not REPLAY.match(line)
+        ]
 
     def log_has(self, needle: str) -> bool:
         return any(needle in line for line in self.live_log())

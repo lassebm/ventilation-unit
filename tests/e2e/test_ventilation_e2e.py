@@ -141,6 +141,25 @@ async def test_filter_reset_button(rig):
     assert rig.unit.commits >= 1
 
 
+async def test_reset_pulses_dtr_with_rts_low(rig):
+    """The controller's reset per the CP210X wiring: DTR high pulls NRST low while RTS stays low
+    (BOOT0 low, so it boots the application), then both low; the version is read after that.
+    A pty has no modem lines, so this checks the sequence the component requests (its debug log)."""
+    n = rig.node
+    await n.wait_log("Connected to ventilation firmware v2.4", timeout=8)
+    lines = n.log_lines("Modem lines:")
+    assert [line.split("Modem lines: ")[1] for _, line in lines[:2]] == [
+        "DTR=1 RTS=0",
+        "DTR=0 RTS=0",
+    ]
+    pulse = lines[1][0] - lines[0][0]
+    assert 0.3 <= pulse <= 1.0, f"reset pulse {pulse:.3f} s (expected ~0.4 s)"
+    live = n.live_log()
+    released = live.index(lines[1][1])
+    connected = next(i for i, ln in enumerate(live) if "Connected to ventilation" in ln)
+    assert released < connected
+
+
 async def test_reconnects_after_link_loss(rig):
     n = rig.node
     await n.wait_log("Connected to ventilation firmware v2.4", timeout=8)
@@ -151,6 +170,8 @@ async def test_reconnects_after_link_loss(rig):
         lambda: connects(n) >= 2,
         timeout=15,
     )
+    # Reconnecting resets the controller again.
+    assert len(n.log_lines("Modem lines: DTR=1 RTS=0")) >= 2
 
 
 # --- ventilation_panel_bridge (600-baud panel link) -------------------------------------------

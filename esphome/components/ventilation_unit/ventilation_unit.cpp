@@ -430,6 +430,7 @@ void VentilationUnitComponent::set_modem_lines_(bool dtr, bool rts) {
 #else
   auto *channel = static_cast<usb_uart::USBUartChannelBase *>(this->parent_);
 #endif
+  ESP_LOGD(TAG, "Modem lines: DTR=%u RTS=%u", dtr, rts);
   if (!channel->set_modem_control(dtr, rts)) {
     ESP_LOGW(TAG, "USB serial not connected; DTR/RTS not set");
   }
