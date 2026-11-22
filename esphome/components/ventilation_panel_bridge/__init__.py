@@ -36,9 +36,12 @@ CONFIG_SCHEMA = cv.Schema(
         cv.Optional(CONF_PANEL_UART_ID): cv.use_id(uart.UARTComponent),
         cv.Required(CONF_CONTROLLER_UART_ID): cv.use_id(uart.UARTComponent),
         cv.Optional(CONF_PANEL_CONNECTED, default=True): cv.boolean,
+        # Neither control restores by default: after a reboot the panel (or, without one, the
+        # startup command: speed 1, bypass closed) decides. Set restore_mode to opt in.
         cv.Optional(CONF_MODE): fan.fan_schema(
             VentilationPanelBridgeModeFan,
             icon=ICON_FAN,
+            default_restore_mode="NO_RESTORE",
         ).extend(
             {
                 # Named presets alias the three running speeds in order.
@@ -47,7 +50,9 @@ CONFIG_SCHEMA = cv.Schema(
                 ): validate_preset_modes,
             }
         ),
-        cv.Optional(CONF_BYPASS): switch.switch_schema(switch.ApplySwitch),
+        cv.Optional(CONF_BYPASS): switch.switch_schema(
+            switch.ApplySwitch, default_restore_mode="DISABLED"
+        ),
         cv.Optional(CONF_FILTER_DUE): binary_sensor.binary_sensor_schema(
             device_class=DEVICE_CLASS_PROBLEM,
         ),

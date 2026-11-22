@@ -242,6 +242,33 @@ async def test_heartbeat_without_panel_bytes(rig):
     assert set(sent) == {0x01}
 
 
+async def test_mode_and_bypass_not_restored_by_default(
+    rig, firmware, tmp_path, request
+):
+    """Default restore modes (NO_RESTORE / DISABLED): after a reboot the startup command applies."""
+    from conftest import API_PORT
+    from harness import Node
+
+    rig.panel.command = (
+        None  # no panel bytes, so only a restore could bring the override back
+    )
+    n = rig.node
+    n.fan("mode", state=True, speed_level=3)
+    n.switch("bypass", True)
+    await wait_until(lambda: rig.controller.last_command() == 0x0B)
+    await asyncio.sleep(0.3)
+    await n.stop()
+    rig.controller.received.clear()
+    rig.node = Node(firmware, API_PORT, tmp_path / "prefs")
+    # The failure report shows the rebooted node's log.
+    request.node._e2e_node = rig.node
+    await rig.node.start()
+    await wait_until(lambda: rig.controller.last_command() == 0x01)
+    await rig.node.wait_for("mode", 1, attr="speed_level")
+    await rig.node.wait_for("bypass", False)
+    assert 0x0B not in rig.controller.received
+
+
 async def test_speed_setpoint_registers(rig):
     n = rig.node
     await n.wait_for("outflow_speed_3", close(100), timeout=8)

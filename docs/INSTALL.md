@@ -77,6 +77,27 @@ Set `panel_connected: false` when the panel UART is wired but no physical panel
 is attached. This keeps the bridge from treating a floating RX pin as panel
 commands.
 
+By default, neither the mode nor the bypass survives a reboot of the ESP32. The
+panel's command takes over again, or without a panel the startup command (speed 1,
+bypass closed). To keep them, set `restore_mode` on `mode:` and/or `bypass:`.
+The restored values act like any other ESPHome override and hold until the
+physical panel changes them. This is mostly useful with `panel_connected: false`.
+
+```yaml
+ventilation_panel_bridge:
+  mode:
+    name: Mode
+    restore_mode: RESTORE_DEFAULT_ON   # nothing saved yet -> speed 1
+  bypass:
+    name: Bypass
+    restore_mode: RESTORE_DEFAULT_OFF  # nothing saved yet -> closed
+```
+
+For `mode:`, "off" means standby, so `RESTORE_DEFAULT_OFF` or `ALWAYS_OFF` stop
+the fans whenever there is no saved state (the first boot, or after a flash
+erase), and `ALWAYS_OFF` on every boot. On `bypass:`, `ALWAYS_ON` and `ALWAYS_OFF`
+set the bypass as an override on every boot, even with a panel connected.
+
 ## Bypass and filter reset
 
 - **Bypass** — the panel bridge exposes a writable bypass control (a setting

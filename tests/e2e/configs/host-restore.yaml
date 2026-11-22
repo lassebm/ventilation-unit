@@ -1,0 +1,36 @@
+# Host build for the restore test: bridge only, no physical panel, both controls opted in to
+# restore. (The host build also saves preferences on a clean shutdown; writing them at once just
+# doesn't depend on that.)
+esphome:
+  name: ventilation-restore-test
+
+host:
+
+logger:
+  level: DEBUG
+
+api:
+  port: ${api_port}
+
+preferences:
+  flash_write_interval: 0s
+
+external_components:
+  - source:
+      type: local
+      path: ../../../esphome/components
+
+uart:
+  - id: controller_panel_uart
+    port: ${ctrl_port}
+    baud_rate: 600
+
+ventilation_panel_bridge:
+  controller_uart_id: controller_panel_uart
+  panel_connected: false
+  mode:
+    name: Mode
+    restore_mode: RESTORE_DEFAULT_ON
+  bypass:
+    name: Bypass
+    restore_mode: RESTORE_DEFAULT_OFF

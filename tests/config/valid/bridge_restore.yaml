@@ -1,0 +1,12 @@
+packages:
+  base: !include ../base.yaml
+
+ventilation_panel_bridge:
+  controller_uart_id: controller_panel_uart
+  panel_connected: false
+  mode:
+    name: Mode
+    restore_mode: RESTORE_DEFAULT_ON
+  bypass:
+    name: Bypass
+    restore_mode: RESTORE_DEFAULT_OFF

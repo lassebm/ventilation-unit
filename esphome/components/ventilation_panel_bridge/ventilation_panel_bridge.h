@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cstring>
 
 #include "esphome/components/binary_sensor/binary_sensor.h"
@@ -24,6 +25,17 @@ class VentilationPanelBridgeModeFan final : public fan::Fan, public Component {
   }
 
   void dump_config() override { LOG_FAN("", "Ventilation mode", this); }
+
+  // The mode to restore at boot per the fan's restore_mode (0 = standby, 1-3 = speed), or nothing
+  // when it doesn't restore (the default, NO_RESTORE).
+  optional<uint8_t> restored_mode() {
+    auto restore = this->restore_state_();
+    if (!restore.has_value())
+      return {};
+    if (!restore->state)
+      return 0;
+    return static_cast<uint8_t>(std::clamp(restore->speed, 1, 3));
+  }
 
   // Reflect the actual panel mode (0 = Off/Standby, 1-3 = speed) into the fan entity.
   void publish_mode(uint8_t mode) {
@@ -62,6 +74,14 @@ class VentilationPanelBridgeComponent final : public Component {
   void setup() override {
     ESP_LOGCONFIG(TAG, "Ventilation panel bridge ready");
     this->publish_effective_command_(this->last_effective_command_);
+    // Opt-in restore (restore_mode on the mode fan / bypass switch): re-apply the last mode/bypass as
+    // overrides, which hold until the panel changes them, like any other override.
+    if (this->mode_fan_ != nullptr) {
+      if (auto mode = this->mode_fan_->restored_mode())
+        this->set_mode_override(*mode);
+    }
+    if (this->bypass_switch_ != nullptr)
+      this->bypass_switch_->restore();  // no-op when restore_mode is DISABLED (the default)
   }
 
   void dump_config() override {

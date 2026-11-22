@@ -45,6 +45,14 @@ def firmware(e2e_lock) -> Path:
     )
 
 
+@pytest.fixture(scope="session")
+def firmware_restore(e2e_lock) -> Path:
+    return compile_host(
+        HERE / "configs" / "host-restore.yaml",
+        {"api_port": str(API_PORT), "ctrl_port": str(CTRL_PORT)},
+    )
+
+
 @dataclass
 class Rig:
     node: Node
@@ -60,10 +68,11 @@ async def rig(firmware: Path, tmp_path: Path, request: pytest.FixtureRequest):
     controller = ControllerSide().attach(CTRL_PORT)
     node = Node(firmware, API_PORT, tmp_path / "prefs")
     request.node._e2e_node = node
+    rig = Rig(node, unit, panel, controller)
     try:
         await node.start()
-        yield Rig(node, unit, panel, controller)
+        yield rig
     finally:
-        await node.stop()
+        await rig.node.stop()  # a test may have replaced the node (reboot)
         for s in (unit, panel, controller):
             s.close()
