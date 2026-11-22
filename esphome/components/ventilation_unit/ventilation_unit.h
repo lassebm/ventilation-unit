@@ -20,67 +20,6 @@
 namespace esphome {
 namespace ventilation_unit {
 
-class VentilationUnitComponent;
-
-class VentilationUnitNumber final : public number::Number {
- public:
-  void set_parent(VentilationUnitComponent *parent) { this->parent_ = parent; }
-  void set_register(uint8_t reg) { this->reg_ = reg; }
-  void set_scale(float scale) { this->scale_ = scale; }
-  void set_signed(bool signed_value) { this->signed_ = signed_value; }
-
-  uint8_t get_register() const { return this->reg_; }
-  float from_raw(uint16_t raw) const {
-    if (this->signed_)
-      return static_cast<float>(static_cast<int16_t>(raw)) / this->scale_;
-    return static_cast<float>(raw) / this->scale_;
-  }
-
- protected:
-  void control(float value) override;
-
-  VentilationUnitComponent *parent_{nullptr};
-  uint8_t reg_{0};
-  float scale_{1.0f};
-  bool signed_{false};
-};
-
-class VentilationUnitSwitch final : public switch_::Switch {
- public:
-  void set_parent(VentilationUnitComponent *parent) { this->parent_ = parent; }
-  void set_register(uint8_t reg) { this->reg_ = reg; }
-
- protected:
-  void write_state(bool state) override;
-
-  VentilationUnitComponent *parent_{nullptr};
-  uint8_t reg_{0};
-};
-
-class VentilationUnitEditModeSwitch final : public switch_::Switch {
- public:
-  void set_parent(VentilationUnitComponent *parent) { this->parent_ = parent; }
-
- protected:
-  void write_state(bool state) override;
-
-  VentilationUnitComponent *parent_{nullptr};
-};
-
-class VentilationUnitButton final : public button::Button {
- public:
-  void set_parent(VentilationUnitComponent *parent) { this->parent_ = parent; }
-  void set_register(uint8_t reg) { this->reg_ = reg; }
-  void set_value(uint16_t value) { this->value_ = value; }
-
- protected:
-  void press_action() override;
-
-  VentilationUnitComponent *parent_{nullptr};
-  uint8_t reg_{0};
-  uint16_t value_{1};
-};
-
 class VentilationUnitComponent final : public PollingComponent, public uart::UARTDevice {
  public:
   void set_temperature_sensor(sensor::Sensor *sensor) { this->temperature_sensor_ = sensor; }
@@ -90,33 +29,25 @@ class VentilationUnitComponent final : public PollingComponent, public uart::UAR
   void set_outflow_rpm_sensor(sensor::Sensor *sensor) { this->outflow_rpm_sensor_ = sensor; }
   void set_force_input_binary_sensor(binary_sensor::BinarySensor *sensor) { this->force_input_binary_sensor_ = sensor; }
   void set_bypass_binary_sensor(binary_sensor::BinarySensor *sensor) { this->bypass_binary_sensor_ = sensor; }
-  void set_edit_mode_switch(VentilationUnitEditModeSwitch *switch_) { this->edit_mode_switch_ = switch_; }
-  void set_bypass_hardware_present_switch(VentilationUnitSwitch *switch_) {
-    this->bypass_hardware_present_switch_ = switch_;
-  }
-  void set_bypass_polarity_invert_switch(VentilationUnitSwitch *switch_) {
-    this->bypass_polarity_invert_switch_ = switch_;
-  }
+  void set_edit_mode_switch(switch_::Switch *switch_) { this->edit_mode_switch_ = switch_; }
+  void set_bypass_hardware_present_switch(switch_::Switch *switch_) { this->bypass_hardware_present_switch_ = switch_; }
+  void set_bypass_polarity_invert_switch(switch_::Switch *switch_) { this->bypass_polarity_invert_switch_ = switch_; }
   void set_filter_runtime_sensor(sensor::Sensor *sensor) { this->filter_runtime_sensor_ = sensor; }
   void set_filter_life_remaining_sensor(sensor::Sensor *sensor) { this->filter_life_remaining_sensor_ = sensor; }
   void set_filter_remaining_hours_sensor(sensor::Sensor *sensor) { this->filter_remaining_hours_sensor_ = sensor; }
-  void set_filter_replacement_interval_number(VentilationUnitNumber *number) {
+  void set_filter_replacement_interval_number(number::Number *number) {
     this->filter_replacement_interval_number_ = number;
   }
-  void set_filter_replacement_reset_button(VentilationUnitButton *button) {
-    this->filter_replacement_reset_button_ = button;
-  }
-  void set_freeze_protection_threshold_number(VentilationUnitNumber *number) {
+  void set_filter_replacement_reset_button(button::Button *button) { this->filter_replacement_reset_button_ = button; }
+  void set_freeze_protection_threshold_number(number::Number *number) {
     this->freeze_protection_threshold_number_ = number;
   }
-  void set_humidity_boost_threshold_number(VentilationUnitNumber *number) {
-    this->humidity_boost_threshold_number_ = number;
-  }
-  void set_inflow_speed_setpoint_number(uint8_t index, VentilationUnitNumber *number) {
+  void set_humidity_boost_threshold_number(number::Number *number) { this->humidity_boost_threshold_number_ = number; }
+  void set_inflow_speed_setpoint_number(uint8_t index, number::Number *number) {
     if (index < SETPOINT_COUNT)
       this->inflow_speed_setpoint_numbers_[index] = number;
   }
-  void set_outflow_speed_setpoint_number(uint8_t index, VentilationUnitNumber *number) {
+  void set_outflow_speed_setpoint_number(uint8_t index, number::Number *number) {
     if (index < SETPOINT_COUNT)
       this->outflow_speed_setpoint_numbers_[index] = number;
   }
@@ -208,6 +139,11 @@ class VentilationUnitComponent final : public PollingComponent, public uart::UAR
       case State::IDLE:
         return;
     }
+  }
+
+  // A number entity's control: scale the displayed value to the register's raw units and queue it.
+  void write_number(uint8_t reg, float value) {
+    this->queue_write(reg, static_cast<uint16_t>(value * number_scale_(reg)));
   }
 
   void queue_write(uint8_t reg, uint16_t value) {
@@ -313,18 +249,18 @@ class VentilationUnitComponent final : public PollingComponent, public uart::UAR
   sensor::Sensor *outflow_rpm_sensor_{nullptr};
   binary_sensor::BinarySensor *force_input_binary_sensor_{nullptr};
   binary_sensor::BinarySensor *bypass_binary_sensor_{nullptr};
-  VentilationUnitEditModeSwitch *edit_mode_switch_{nullptr};
-  VentilationUnitSwitch *bypass_hardware_present_switch_{nullptr};
-  VentilationUnitSwitch *bypass_polarity_invert_switch_{nullptr};
+  switch_::Switch *edit_mode_switch_{nullptr};
+  switch_::Switch *bypass_hardware_present_switch_{nullptr};
+  switch_::Switch *bypass_polarity_invert_switch_{nullptr};
   sensor::Sensor *filter_runtime_sensor_{nullptr};
   sensor::Sensor *filter_life_remaining_sensor_{nullptr};
   sensor::Sensor *filter_remaining_hours_sensor_{nullptr};
-  VentilationUnitNumber *filter_replacement_interval_number_{nullptr};
-  VentilationUnitButton *filter_replacement_reset_button_{nullptr};
-  VentilationUnitNumber *freeze_protection_threshold_number_{nullptr};
-  VentilationUnitNumber *humidity_boost_threshold_number_{nullptr};
-  std::array<VentilationUnitNumber *, SETPOINT_COUNT> inflow_speed_setpoint_numbers_{};
-  std::array<VentilationUnitNumber *, SETPOINT_COUNT> outflow_speed_setpoint_numbers_{};
+  number::Number *filter_replacement_interval_number_{nullptr};
+  button::Button *filter_replacement_reset_button_{nullptr};
+  number::Number *freeze_protection_threshold_number_{nullptr};
+  number::Number *humidity_boost_threshold_number_{nullptr};
+  std::array<number::Number *, SETPOINT_COUNT> inflow_speed_setpoint_numbers_{};
+  std::array<number::Number *, SETPOINT_COUNT> outflow_speed_setpoint_numbers_{};
   text_sensor::TextSensor *firmware_version_text_sensor_{nullptr};
   bool edit_mode_{false};
   bool application_ready_{false};
@@ -542,26 +478,37 @@ class VentilationUnitComponent final : public PollingComponent, public uart::UAR
         this->filter_runtime_sensor_->publish_state(static_cast<float>(raw) / 6.0f);
       this->publish_filter_remaining_();
     } else if (reg == REG_FILTER_REPLACEMENT_INTERVAL) {
-      this->publish_number_(this->filter_replacement_interval_number_, raw);
+      this->publish_number_(this->filter_replacement_interval_number_, reg, raw);
       this->publish_filter_remaining_();
     } else if (reg == REG_FREEZE_PROTECTION_THRESHOLD) {
-      this->publish_number_(this->freeze_protection_threshold_number_, raw);
+      this->publish_number_(this->freeze_protection_threshold_number_, reg, raw);
     } else if (reg == REG_HUMIDITY_BOOST_THRESHOLD) {
-      this->publish_number_(this->humidity_boost_threshold_number_, raw);
+      this->publish_number_(this->humidity_boost_threshold_number_, reg, raw);
     } else if (reg >= REG_INFLOW_SPEED_SETPOINT_BASE && reg < REG_INFLOW_SPEED_SETPOINT_BASE + SETPOINT_COUNT) {
-      this->publish_number_(this->inflow_speed_setpoint_numbers_[reg - REG_INFLOW_SPEED_SETPOINT_BASE], raw);
+      this->publish_number_(this->inflow_speed_setpoint_numbers_[reg - REG_INFLOW_SPEED_SETPOINT_BASE], reg, raw);
     } else if (reg >= REG_OUTFLOW_SPEED_SETPOINT_BASE && reg < REG_OUTFLOW_SPEED_SETPOINT_BASE + SETPOINT_COUNT) {
-      this->publish_number_(this->outflow_speed_setpoint_numbers_[reg - REG_OUTFLOW_SPEED_SETPOINT_BASE], raw);
+      this->publish_number_(this->outflow_speed_setpoint_numbers_[reg - REG_OUTFLOW_SPEED_SETPOINT_BASE], reg, raw);
     }
     this->status_clear_warning();
   }
 
-  void publish_number_(VentilationUnitNumber *number, uint16_t raw) {
-    if (number != nullptr)
-      number->publish_state(number->from_raw(raw));
+  // Raw register units per displayed number unit: speed setpoints are 0-1000 for 0-100 %, the filter
+  // interval counts 10-minute ticks (6 per hour), and the thresholds are stored as-is.
+  static constexpr float number_scale_(uint8_t reg) {
+    if (reg == REG_FILTER_REPLACEMENT_INTERVAL)
+      return 6.0f;
+    if ((reg >= REG_INFLOW_SPEED_SETPOINT_BASE && reg < REG_INFLOW_SPEED_SETPOINT_BASE + SETPOINT_COUNT) ||
+        (reg >= REG_OUTFLOW_SPEED_SETPOINT_BASE && reg < REG_OUTFLOW_SPEED_SETPOINT_BASE + SETPOINT_COUNT))
+      return 10.0f;
+    return 1.0f;
   }
 
-  void publish_switch_(VentilationUnitSwitch *switch_, uint16_t raw) {
+  void publish_number_(number::Number *number, uint8_t reg, uint16_t raw) {
+    if (number != nullptr)
+      number->publish_state(static_cast<float>(raw) / number_scale_(reg));
+  }
+
+  void publish_switch_(switch_::Switch *switch_, uint16_t raw) {
     if (switch_ != nullptr)
       switch_->publish_state(raw != 0);
   }
@@ -696,34 +643,6 @@ class VentilationUnitComponent final : public PollingComponent, public uart::UAR
       ESP_LOGW(TAG, "USB serial not connected; DTR/RTS not set");
   }
 };
-
-inline void VentilationUnitNumber::control(float value) {
-  if (this->parent_ == nullptr)
-    return;
-  if (this->signed_) {
-    this->parent_->queue_write(this->reg_, static_cast<uint16_t>(static_cast<int16_t>(value * this->scale_)));
-  } else {
-    this->parent_->queue_write(this->reg_, static_cast<uint16_t>(value * this->scale_));
-  }
-}
-
-inline void VentilationUnitSwitch::write_state(bool state) {
-  if (this->parent_ == nullptr)
-    return;
-  this->parent_->queue_write(this->reg_, state ? 1 : 0);
-}
-
-inline void VentilationUnitEditModeSwitch::write_state(bool state) {
-  if (this->parent_ == nullptr)
-    return;
-  this->parent_->set_edit_mode(state);
-}
-
-inline void VentilationUnitButton::press_action() {
-  if (this->parent_ == nullptr)
-    return;
-  this->parent_->queue_write(this->reg_, this->value_);
-}
 
 }  // namespace ventilation_unit
 }  // namespace esphome

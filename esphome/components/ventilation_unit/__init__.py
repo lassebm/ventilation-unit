@@ -80,18 +80,6 @@ ventilation_unit_ns = cg.esphome_ns.namespace("ventilation_unit")
 VentilationUnitComponent = ventilation_unit_ns.class_(
     "VentilationUnitComponent", cg.PollingComponent, uart.UARTDevice
 )
-VentilationUnitNumber = ventilation_unit_ns.class_(
-    "VentilationUnitNumber", number.Number
-)
-VentilationUnitSwitch = ventilation_unit_ns.class_(
-    "VentilationUnitSwitch", switch.Switch
-)
-VentilationUnitEditModeSwitch = ventilation_unit_ns.class_(
-    "VentilationUnitEditModeSwitch", switch.Switch
-)
-VentilationUnitButton = ventilation_unit_ns.class_(
-    "VentilationUnitButton", button.Button
-)
 
 
 def _uart_id(value):
@@ -102,7 +90,7 @@ def _uart_id(value):
 
 def setpoint_schema():
     return number.number_schema(
-        VentilationUnitNumber,
+        number.ApplyNumber,
         unit_of_measurement=UNIT_PERCENT,
         icon=ICON_FAN,
         entity_category=ENTITY_CATEGORY_CONFIG,
@@ -169,17 +157,17 @@ CONFIG_SCHEMA = (
             cv.Optional(CONF_FORCE_INPUT): binary_sensor.binary_sensor_schema(),
             cv.Optional(CONF_BYPASS_STATE): binary_sensor.binary_sensor_schema(),
             cv.Optional(CONF_EDIT_MODE): switch.switch_schema(
-                VentilationUnitEditModeSwitch,
+                switch.ApplySwitch,
                 default_restore_mode="ALWAYS_OFF",
                 entity_category=ENTITY_CATEGORY_CONFIG,
             ),
             cv.Optional(CONF_BYPASS_HARDWARE_PRESENT): switch.switch_schema(
-                VentilationUnitSwitch,
+                switch.ApplySwitch,
                 default_restore_mode="DISABLED",
                 entity_category=ENTITY_CATEGORY_CONFIG,
             ),
             cv.Optional(CONF_BYPASS_POLARITY_INVERT): switch.switch_schema(
-                VentilationUnitSwitch,
+                switch.ApplySwitch,
                 default_restore_mode="DISABLED",
                 entity_category=ENTITY_CATEGORY_CONFIG,
             ),
@@ -202,24 +190,24 @@ CONFIG_SCHEMA = (
                 state_class=STATE_CLASS_MEASUREMENT,
             ),
             cv.Optional(CONF_FILTER_REPLACEMENT_INTERVAL): number.number_schema(
-                VentilationUnitNumber,
+                number.ApplyNumber,
                 unit_of_measurement=UNIT_HOUR,
                 icon=ICON_TIMER,
                 entity_category=ENTITY_CATEGORY_CONFIG,
             ),
             cv.Optional(CONF_FILTER_REPLACEMENT_RESET): button.button_schema(
-                VentilationUnitButton,
+                button.ApplyButton,
                 icon=ICON_RESTART,
                 entity_category=ENTITY_CATEGORY_CONFIG,
             ),
             cv.Optional(CONF_FREEZE_PROTECTION_THRESHOLD): number.number_schema(
-                VentilationUnitNumber,
+                number.ApplyNumber,
                 unit_of_measurement=UNIT_CELSIUS,
                 device_class=DEVICE_CLASS_TEMPERATURE,
                 entity_category=ENTITY_CATEGORY_CONFIG,
             ),
             cv.Optional(CONF_HUMIDITY_BOOST_THRESHOLD): number.number_schema(
-                VentilationUnitNumber,
+                number.ApplyNumber,
                 unit_of_measurement=UNIT_PERCENT,
                 device_class=DEVICE_CLASS_HUMIDITY,
                 entity_category=ENTITY_CATEGORY_CONFIG,
@@ -246,116 +234,101 @@ async def to_code(config):
     await cg.register_component(var, config)
     await uart.register_uart_device(var, config)
 
-    if temperature_config := config.get(CONF_TEMPERATURE):
-        sens = await sensor.new_sensor(temperature_config)
-        cg.add(var.set_temperature_sensor(sens))
-    if humidity_config := config.get(CONF_HUMIDITY):
-        sens = await sensor.new_sensor(humidity_config)
-        cg.add(var.set_humidity_sensor(sens))
-    if humidity_voltage_config := config.get(CONF_HUMIDITY_VOLTAGE):
-        sens = await sensor.new_sensor(humidity_voltage_config)
-        cg.add(var.set_humidity_voltage_sensor(sens))
-    if inflow_config := config.get(CONF_INFLOW_RPM):
-        sens = await sensor.new_sensor(inflow_config)
-        cg.add(var.set_inflow_rpm_sensor(sens))
-    if outflow_config := config.get(CONF_OUTFLOW_RPM):
-        sens = await sensor.new_sensor(outflow_config)
-        cg.add(var.set_outflow_rpm_sensor(sens))
-    if force_input_config := config.get(CONF_FORCE_INPUT):
-        sens = await binary_sensor.new_binary_sensor(force_input_config)
-        cg.add(var.set_force_input_binary_sensor(sens))
-    if bypass_config := config.get(CONF_BYPASS_STATE):
-        sens = await binary_sensor.new_binary_sensor(bypass_config)
-        cg.add(var.set_bypass_binary_sensor(sens))
-    if edit_mode_config := config.get(CONF_EDIT_MODE):
-        sw = await switch.new_switch(edit_mode_config)
-        cg.add(sw.set_parent(var))
-        cg.add(var.set_edit_mode_switch(sw))
-    if bypass_hardware_present_config := config.get(CONF_BYPASS_HARDWARE_PRESENT):
-        sw = await switch.new_switch(bypass_hardware_present_config)
-        cg.add(sw.set_parent(var))
-        cg.add(sw.set_register(REG_BYPASS_HARDWARE_PRESENT))
-        cg.add(var.set_bypass_hardware_present_switch(sw))
-    if bypass_polarity_invert_config := config.get(CONF_BYPASS_POLARITY_INVERT):
-        sw = await switch.new_switch(bypass_polarity_invert_config)
-        cg.add(sw.set_parent(var))
-        cg.add(sw.set_register(REG_BYPASS_POLARITY_INVERT))
-        cg.add(var.set_bypass_polarity_invert_switch(sw))
-    if filter_runtime_config := config.get(CONF_FILTER_RUNTIME):
-        sens = await sensor.new_sensor(filter_runtime_config)
-        cg.add(var.set_filter_runtime_sensor(sens))
-    if filter_life_remaining_config := config.get(CONF_FILTER_LIFE_REMAINING):
-        sens = await sensor.new_sensor(filter_life_remaining_config)
-        cg.add(var.set_filter_life_remaining_sensor(sens))
-    if filter_remaining_hours_config := config.get(CONF_FILTER_REMAINING_HOURS):
-        sens = await sensor.new_sensor(filter_remaining_hours_config)
-        cg.add(var.set_filter_remaining_hours_sensor(sens))
-    if filter_replacement_interval_config := config.get(
-        CONF_FILTER_REPLACEMENT_INTERVAL
-    ):
-        num = await number.new_number(
-            filter_replacement_interval_config,
-            min_value=1,
-            max_value=9999,
-            step=1,
-        )
-        cg.add(num.set_parent(var))
-        cg.add(num.set_register(REG_FILTER_REPLACEMENT_INTERVAL))
-        cg.add(num.set_scale(6.0))
-        cg.add(var.set_filter_replacement_interval_number(num))
-    if filter_replacement_reset_config := config.get(CONF_FILTER_REPLACEMENT_RESET):
-        btn = await button.new_button(filter_replacement_reset_config)
-        cg.add(btn.set_parent(var))
-        cg.add(btn.set_register(REG_FILTER_REPLACEMENT_RESET))
-        cg.add(btn.set_value(1))
-        cg.add(var.set_filter_replacement_reset_button(btn))
-    if freeze_protection_threshold_config := config.get(
-        CONF_FREEZE_PROTECTION_THRESHOLD
-    ):
-        num = await number.new_number(
-            freeze_protection_threshold_config, min_value=1, max_value=31, step=1
-        )
-        cg.add(num.set_parent(var))
-        cg.add(num.set_register(REG_FREEZE_PROTECTION_THRESHOLD))
-        cg.add(num.set_scale(1.0))
-        cg.add(var.set_freeze_protection_threshold_number(num))
+    # Read-only entities: the hub publishes them from its refresh cycle.
+    sensors = sensor.sub_sensors(config)
+    await sensors(CONF_TEMPERATURE, var.set_temperature_sensor)
+    await sensors(CONF_HUMIDITY, var.set_humidity_sensor)
+    await sensors(CONF_HUMIDITY_VOLTAGE, var.set_humidity_voltage_sensor)
+    await sensors(CONF_INFLOW_RPM, var.set_inflow_rpm_sensor)
+    await sensors(CONF_OUTFLOW_RPM, var.set_outflow_rpm_sensor)
+    await sensors(CONF_FILTER_RUNTIME, var.set_filter_runtime_sensor)
+    await sensors(CONF_FILTER_LIFE_REMAINING, var.set_filter_life_remaining_sensor)
+    await sensors(CONF_FILTER_REMAINING_HOURS, var.set_filter_remaining_hours_sensor)
+    binary_sensors = binary_sensor.sub_binary_sensors(config)
+    await binary_sensors(CONF_FORCE_INPUT, var.set_force_input_binary_sensor)
+    await binary_sensors(CONF_BYPASS_STATE, var.set_bypass_binary_sensor)
+    text_sensors = text_sensor.sub_text_sensors(config)
+    await text_sensors(CONF_FIRMWARE_VERSION, var.set_firmware_version_text_sensor)
 
-    if humidity_boost_threshold_config := config.get(CONF_HUMIDITY_BOOST_THRESHOLD):
-        num = await number.new_number(
-            humidity_boost_threshold_config, min_value=30, max_value=80, step=1
+    # Writable entities forward to the hub, which gates them on edit mode, writes the register,
+    # commits it to flash, and publishes the confirmed value. So none of them publish on their own.
+    switches = switch.sub_switches(config, parent=var)
+    await switches(
+        CONF_EDIT_MODE, var.set_edit_mode_switch, apply="set_edit_mode(state)"
+    )
+    for key, setter, reg in (
+        (
+            CONF_BYPASS_HARDWARE_PRESENT,
+            var.set_bypass_hardware_present_switch,
+            REG_BYPASS_HARDWARE_PRESENT,
+        ),
+        (
+            CONF_BYPASS_POLARITY_INVERT,
+            var.set_bypass_polarity_invert_switch,
+            REG_BYPASS_POLARITY_INVERT,
+        ),
+    ):
+        await switches(key, setter, apply=f"queue_write({reg}, state ? 1 : 0)")
+
+    buttons = button.sub_buttons(config, parent=var)
+    await buttons(
+        CONF_FILTER_REPLACEMENT_RESET,
+        var.set_filter_replacement_reset_button,
+        apply=f"queue_write({REG_FILTER_REPLACEMENT_RESET}, 1)",
+    )
+
+    # Numbers are written in display units; the hub scales them to raw register units.
+    numbers = number.sub_numbers(config, parent=var)
+    for key, setter, reg, (lo, hi) in (
+        (
+            CONF_FILTER_REPLACEMENT_INTERVAL,
+            var.set_filter_replacement_interval_number,
+            REG_FILTER_REPLACEMENT_INTERVAL,
+            (1, 9999),
+        ),
+        (
+            CONF_FREEZE_PROTECTION_THRESHOLD,
+            var.set_freeze_protection_threshold_number,
+            REG_FREEZE_PROTECTION_THRESHOLD,
+            (1, 31),
+        ),
+        (
+            CONF_HUMIDITY_BOOST_THRESHOLD,
+            var.set_humidity_boost_threshold_number,
+            REG_HUMIDITY_BOOST_THRESHOLD,
+            (30, 80),
+        ),
+    ):
+        await numbers(
+            key,
+            setter,
+            min_value=lo,
+            max_value=hi,
+            step=1,
+            apply=f"write_number({reg}, value)",
         )
-        cg.add(num.set_parent(var))
-        cg.add(num.set_register(REG_HUMIDITY_BOOST_THRESHOLD))
-        cg.add(num.set_scale(1.0))
-        cg.add(var.set_humidity_boost_threshold_number(num))
 
     for key, setter, base_reg in (
         (
             CONF_INFLOW_SPEED_SETPOINTS,
-            "set_inflow_speed_setpoint_number",
+            var.set_inflow_speed_setpoint_number,
             REG_INFLOW_SPEED_SETPOINT_BASE,
         ),
         (
             CONF_OUTFLOW_SPEED_SETPOINTS,
-            "set_outflow_speed_setpoint_number",
+            var.set_outflow_speed_setpoint_number,
             REG_OUTFLOW_SPEED_SETPOINT_BASE,
         ),
     ):
-        speed_setpoints_config = config.get(key)
-        if speed_setpoints_config is None:
+        if (speed_setpoints_config := config.get(key)) is None:
             continue
+        setpoints = number.sub_numbers(speed_setpoints_config, parent=var)
         for i, setpoint_key in enumerate(SPEED_SETPOINTS):
-            if setpoint_key not in speed_setpoints_config:
-                continue
-            number_config = speed_setpoints_config[setpoint_key]
-            num = await number.new_number(
-                number_config, min_value=0, max_value=100, step=1
+            await setpoints(
+                setpoint_key,
+                lambda num, setter=setter, i=i: setter(i, num),
+                min_value=0,
+                max_value=100,
+                step=1,
+                apply=f"write_number({base_reg + i}, value)",
             )
-            cg.add(num.set_parent(var))
-            cg.add(num.set_register(base_reg + i))
-            cg.add(num.set_scale(10.0))
-            cg.add(getattr(var, setter)(i, num))
-
-    if firmware_config := config.get(CONF_FIRMWARE_VERSION):
-        sens = await text_sensor.new_text_sensor(firmware_config)
-        cg.add(var.set_firmware_version_text_sensor(sens))

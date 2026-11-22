@@ -49,23 +49,13 @@ class VentilationPanelBridgeModeFan final : public fan::Fan, public Component {
   VentilationPanelBridgeComponent *parent_{nullptr};
 };
 
-class VentilationPanelBridgeBypassSwitch final : public switch_::Switch {
- public:
-  void set_parent(VentilationPanelBridgeComponent *parent) { this->parent_ = parent; }
-
- protected:
-  void write_state(bool state) override;
-
-  VentilationPanelBridgeComponent *parent_{nullptr};
-};
-
 class VentilationPanelBridgeComponent final : public Component {
  public:
   void set_panel_uart(uart::UARTComponent *uart) { this->panel_uart_ = uart; }
   void set_controller_uart(uart::UARTComponent *uart) { this->controller_uart_ = uart; }
   void set_panel_connected(bool connected) { this->panel_connected_ = connected; }
   void set_mode_fan(VentilationPanelBridgeModeFan *fan) { this->mode_fan_ = fan; }
-  void set_bypass_switch(VentilationPanelBridgeBypassSwitch *switch_) { this->bypass_switch_ = switch_; }
+  void set_bypass_switch(switch_::Switch *switch_) { this->bypass_switch_ = switch_; }
   void set_filter_due_binary_sensor(binary_sensor::BinarySensor *sensor) { this->filter_due_binary_sensor_ = sensor; }
   void set_alarm_binary_sensor(binary_sensor::BinarySensor *sensor) { this->alarm_binary_sensor_ = sensor; }
 
@@ -118,7 +108,7 @@ class VentilationPanelBridgeComponent final : public Component {
   uart::UARTComponent *controller_uart_{nullptr};
   bool panel_connected_{true};
   VentilationPanelBridgeModeFan *mode_fan_{nullptr};
-  VentilationPanelBridgeBypassSwitch *bypass_switch_{nullptr};
+  switch_::Switch *bypass_switch_{nullptr};
   binary_sensor::BinarySensor *filter_due_binary_sensor_{nullptr};
   binary_sensor::BinarySensor *alarm_binary_sensor_{nullptr};
 
@@ -272,12 +262,6 @@ inline void VentilationPanelBridgeModeFan::control(const fan::FanCall &call) {
   if (mode > 3)
     mode = 3;
   this->parent_->set_mode_override(mode);
-}
-
-inline void VentilationPanelBridgeBypassSwitch::write_state(bool state) {
-  if (this->parent_ == nullptr)
-    return;
-  this->parent_->set_bypass_override(state);
 }
 
 }  // namespace ventilation_panel_bridge

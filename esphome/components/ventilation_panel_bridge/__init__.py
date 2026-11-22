@@ -28,9 +28,6 @@ VentilationPanelBridgeComponent = ventilation_panel_bridge_ns.class_(
 VentilationPanelBridgeModeFan = ventilation_panel_bridge_ns.class_(
     "VentilationPanelBridgeModeFan", fan.Fan, cg.Component
 )
-VentilationPanelBridgeBypassSwitch = ventilation_panel_bridge_ns.class_(
-    "VentilationPanelBridgeBypassSwitch", switch.Switch
-)
 
 
 CONFIG_SCHEMA = cv.Schema(
@@ -50,9 +47,7 @@ CONFIG_SCHEMA = cv.Schema(
                 ): validate_preset_modes,
             }
         ),
-        cv.Optional(CONF_BYPASS): switch.switch_schema(
-            VentilationPanelBridgeBypassSwitch,
-        ),
+        cv.Optional(CONF_BYPASS): switch.switch_schema(switch.ApplySwitch),
         cv.Optional(CONF_FILTER_DUE): binary_sensor.binary_sensor_schema(
             device_class=DEVICE_CLASS_PROBLEM,
         ),
@@ -111,15 +106,12 @@ async def to_code(config):
             fan.set_preset_modes(mode_fan, preset_modes)
         cg.add(var.set_mode_fan(mode_fan))
 
-    if bypass_config := config.get(CONF_BYPASS):
-        sw = await switch.new_switch(bypass_config)
-        cg.add(sw.set_parent(var))
-        cg.add(var.set_bypass_switch(sw))
+    # The bridge publishes the bypass state once it's part of the effective command.
+    switches = switch.sub_switches(config, parent=var)
+    await switches(
+        CONF_BYPASS, var.set_bypass_switch, apply="set_bypass_override(state)"
+    )
 
-    if filter_due_config := config.get(CONF_FILTER_DUE):
-        sens = await binary_sensor.new_binary_sensor(filter_due_config)
-        cg.add(var.set_filter_due_binary_sensor(sens))
-
-    if alarm_config := config.get(CONF_ALARM):
-        sens = await binary_sensor.new_binary_sensor(alarm_config)
-        cg.add(var.set_alarm_binary_sensor(sens))
+    binary_sensors = binary_sensor.sub_binary_sensors(config)
+    await binary_sensors(CONF_FILTER_DUE, var.set_filter_due_binary_sensor)
+    await binary_sensors(CONF_ALARM, var.set_alarm_binary_sensor)
