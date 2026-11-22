@@ -65,11 +65,10 @@ select a panel mode, not an airflow percentage. The actual airflow for each mode
 is set by the inflow/outflow speed setpoints — see
 [PROTOCOL.md](PROTOCOL.md#speed-setpoints).
 
-The same three modes are also exposed as fan **preset modes**, so they appear in
-the fan entity's preset picker, in automations, and in voice assistants. Presets
-alias the speeds in declared order, so the preset and the speed slider always
-reflect the same panel mode. The names default to `Speed 1`/`Speed 2`/`Speed 3` and can be overridden
-per device with `preset_modes` under `mode:`.
+The same three modes are also exposed as fan **preset modes**, so they appear in the fan entity's
+preset picker, in automations, and in voice assistants. Presets alias the speeds in declared order,
+so the preset and the speed slider always reflect the same panel mode. The names default to
+`Speed 1`/`Speed 2`/`Speed 3` and can be overridden per device with `preset_modes` under `mode:`.
 
 A mode set from ESPHome sticks until someone changes it on the physical panel.
 

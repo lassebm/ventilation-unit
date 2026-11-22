@@ -21,10 +21,10 @@ A parametric, 3D-printable enclosure for the ESP32-S3 node (see
 
 Houses one **ESP32-S3-DevKitC-1** and the **double RJ45 breakout**, with a **snap-fit lid**. The
 RJ45 jacks **and** the board's two USB-C connectors all exit the **same front wall**. The breakout's
-two RJ45 jacks are **bridged** (wired in parallel), so **+5 V / GND** power and the **front-panel and
-controller UART** lines all ride one Ethernet cable and appear on both jacks — use either, or split
-the load across the two. The two **USB-C connectors** (native-USB host + UART/flash) stay reachable
-for the USB-host link and flashing.
+two RJ45 jacks are **bridged** (wired in parallel), so **+5 V / GND** power and the
+**front-panel and controller UART** lines all ride one Ethernet cable and appear on both jacks — use
+either, or split the load across the two. The two **USB-C connectors** (native-USB host +
+UART/flash) stay reachable for the USB-host link and flashing.
 
 The RJ45 breakout drops into a **pocket** (front wall + left seat flange + the shared middle wall
 as its right rib + a back rib); a hold-down tab on the lid underside clamps its top edge when the
@@ -33,11 +33,12 @@ lid closes — no fasteners.
 The ESP32-S3 **lies flat** on the **floor** on its own soldered pin tails — **no under-board ledge**
 to foul the bottom-side pins/solder. The **case length matches the board**, so the front and back
 walls **butt its two ends** and stop it in Y (its USB-C shells seat in the front cutouts); in X it's
-located between the **shared middle wall** (left) and a **seat flange** (right). Each board registers
-on a flat seat flange along its outer edge rather than on a rounded wall corner (which can't seat a
-board flat); the flanges stand `flange_proud` in from the side walls, widening the box slightly. Two
-stout **hold-down tabs** on the lid press the board's **rigid parts**: a crossbar across both **USB-C
-shells** at the front and a bar on the **RF shield can** at the back, clear of the antenna. No screws.
+located between the **shared middle wall** (left) and a **seat flange** (right). Each board
+registers on a flat seat flange along its outer edge rather than on a rounded wall corner (which
+can't seat a board flat); the flanges stand `flange_proud` in from the side walls, widening the box
+slightly. Two stout **hold-down tabs** on the lid press the board's **rigid parts**: a crossbar
+across both **USB-C shells** at the front and a bar on the **RF shield can** at the back, clear of
+the antenna. No screws.
 
 The WROOM **antenna** sits just inside the back wall — fine for normal use, but the plastic detunes
 it a little. If WiFi range is poor (or the antenna overhangs the PCB edge on your board), raise
@@ -78,20 +79,20 @@ clone (`esp_w` 27.75 mm vs a genuine Espressif board's ~25.4 mm). Update every v
   obstruction above the PCB, sets the box height — raise to the dupont-tip height for headers),
   `esp_pin_h` (how far the board sits off the floor on its pin tails — sets the tab reach and USB-C
   window height), and `esp_ant_len` (antenna keep-out at the back end — the rear tab is derived to
-  stay off it). `esp_ant_clear` is the gap to the back wall, near-zero so the case length matches the
-  board; raise it for WiFi range or an overhanging antenna.
+  stay off it). `esp_ant_clear` is the gap to the back wall, near-zero so the case length matches
+  the board; raise it for WiFi range or an overhanging antenna.
 - **The two USB-C connectors:** `usb_span` (outer-to-outer, far side of one shell to far side of the
   other), `usb_conn_w` (one shell's width), `usb_body_h` (shell height above the PCB top). Each gets
   its own window + `usb_clear`; if the wall left between them would be thinner than `usb_min_div`
-  they merge into one (they're ~2 mm apart on the DevKitC-1, so one window). The opening's height and
-  height above the floor are **derived** from `esp_pin_h + esp_pcb_t`.
+  they merge into one (they're ~2 mm apart on the DevKitC-1, so one window). The opening's height
+  and height above the floor are **derived** from `esp_pin_h + esp_pcb_t`.
 - **Double RJ45 breakout:** board L×W (`rj_l`/`rj_w`), the jack **window** W×H, plus `rj_jack_d`
-  (jack-housing depth from the wall) and `rj_h` (floor to top of the housing) — the lid hold-down tab
-  lands on the housing top using these two.
+  (jack-housing depth from the wall) and `rj_h` (floor to top of the housing) — the lid hold-down
+  tab lands on the housing top using these two.
 - **S3 hold-down tabs:** the front crossbar (`usb_hold_*`) presses both USB-C shells; the rear bar
   (`mod_hold_*`) presses the RF shield can (position derived from `esp_ant_len` to stay off the
-  antenna). Check they land on those rigid parts for your board — adjust `usb_hold_yoff` / `esp_ant_len`
-  if its layout differs.
+  antenna). Check they land on those rigid parts for your board — adjust `usb_hold_yoff` /
+  `esp_ant_len` if its layout differs.
 
 The interior footprint and height are **derived** from these, so the box resizes itself to fit —
 compact and near-square, with the RJ45 windows on the front-wall left and the USB-C window on the
@@ -108,8 +109,8 @@ changed. Two ways in:
 - **By hand:** open [`enclosure.scad`](enclosure.scad) in OpenSCAD, edit the named variables at the
   top (start with everything marked `// MEASURE`), press F5 to preview, then re-export (below).
 - **With AI:** the whole model is a single, commented, plain-text `.scad` file — a good fit for an
-  AI coding assistant. Point a tool like Claude Code at this folder, describe your parts and what you
-  want changed, and iterate. Always render and eyeball the result — and dry-fit a print — before
+  AI coding assistant. Point a tool like Claude Code at this folder, describe your parts and what
+  you want changed, and iterate. Always render and eyeball the result — and dry-fit a print — before
   trusting it; AI gets dimensions and clearances wrong.
 
 ## Render / export
@@ -127,13 +128,14 @@ openscad -o lid.stl  -D 'part="lid";'  enclosure.scad
 
 ## Printing notes
 
-- **Orientation:** print both parts flat (base floor-down, lid top-down), normally no supports.
-  The front-wall openings print as **bridges** (top edge anchored both sides): the RJ45 windows are
-  split by a divider (`rj_win_gap`) into short spans, the merged USB-C window is a single ~21 mm span,
-  and the snap slots (and side-wall vent slots, if enabled) are all narrow — they bridge cleanly on
-  most printers with part cooling. If yours sags, add supports for the **base only** (the scars land
-  hidden inside the openings). The lid needs no supports: its vent slots are through-holes in the flat
-  plate, and the snap teeth and three hold-down tabs are sloped or vertical.
+- **Orientation:** print both parts flat (base floor-down, lid top-down), normally no supports. The
+  front-wall openings print as **bridges** (top edge anchored both sides): the RJ45 windows are
+  split by a divider (`rj_win_gap`) into short spans, the merged USB-C window is a single ~21 mm
+  span, and the snap slots (and side-wall vent slots, if enabled) are all narrow — they bridge
+  cleanly on most printers with part cooling. If yours sags, add supports for the **base only** (the
+  scars land hidden inside the openings). The lid needs no supports: its vent slots are
+  through-holes in the flat plate, and the snap teeth and three hold-down tabs are sloped or
+  vertical.
 - **Material:** PLA or PETG, 3 perimeters, 20 % infill.
 - **Snap fit is printer-dependent.** Print the **lid first** and test the click. Too tight → raise
   `fit_clear` or lower `snap_depth`; too loose → the reverse. `snap_n_short` / `snap_n_long` set the

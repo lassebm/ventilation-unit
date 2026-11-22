@@ -28,7 +28,8 @@ device behavior — see the README for the full picture.
   `e2e/` (host build + simulated controller links), and the pytest drivers. `script/test` runs it
   together with `cli/tests/`.
 - `reverse-engineering/` — **gitignored, local-only.** Firmware dumps, Ghidra analysis, Renode
-  emulation, captures, RE notes. Never published; never reference these files from tracked code or docs.
+  emulation, captures, RE notes. Never published; never reference these files from
+  tracked code or docs.
 
 ## Two serial links
 
@@ -71,7 +72,8 @@ The controller exposes two independent application-level UARTs — keep them str
 
 Mirrors upstream ESPHome's toolchain. The configs (`.clang-format`, `.yamllint`, and the ruff
 sections of `pyproject.toml`) are copies of upstream's, and the tool versions are pinned to
-upstream's. **Run these before committing.** There is no CI to catch misses:
+upstream's. **Run these before committing.** CI (`.github/workflows/ci.yml`) runs the same checks
+plus `script/test --all`, but catching misses locally is faster:
 
 - **C++** — `uvx --from clang-format==23.1.3 clang-format -i esphome/components/*/*.h esphome/components/*/*.cpp`
 - **Python** — `uvx ruff@0.17.5 format . && uvx ruff@0.17.5 check .`
@@ -97,7 +99,8 @@ ignore the rule. Sync the config rather than working around it.
 - **CLI write units:** writes use human-facing units by default (speed setpoints as %, filter
   interval in hours, thresholds in displayed units). `--raw` writes exact 16-bit register payloads,
   `--force` bypasses guards on low-level writes, `--save` persists to flash. Register definitions
-  and access flags live in `cli/ventilation_unit.py`; the tests assert the scaling (e.g. 40% → raw 400).
+  and access flags live in `cli/ventilation_unit.py`; the tests assert the scaling
+  (e.g. 40% → raw 400).
 - **ESPHome config writes** are gated behind an `edit_mode` switch — off during normal operation.
 - Otherwise, match the style of the surrounding code and docs.
 
@@ -122,6 +125,7 @@ When bringing the components up to a new ESPHome release (or fixing a break caus
     and adopt the changes.
   - Re-run the formatters and linters. `script/lint-upstream` follows the ESPHome pin by itself, so
     a new release can bring new convention checks.
+- Bump the GitHub Actions in `.github/workflows/ci.yml` to their latest major versions.
 - Verify with a full `esphome compile` (check for warnings or deprecations from the components),
   the test suite (`script/test --all`), and the linters.
 
@@ -130,5 +134,5 @@ When bringing the components up to a new ESPHome release (or fixing a break caus
 - Commit `esphome/secrets.yaml`, the `.esphome/` build cache, or anything under
   `reverse-engineering/`.
 - Change hardware-validated protocol/scaling logic without a clear reason — it drives real fans,
-  bypass dampers, and frost protection. Prefer additive changes; cross-check `docs/PROTOCOL.md` and run
-  the tests after touching register or scaling code.
+  bypass dampers, and frost protection. Prefer additive changes; cross-check `docs/PROTOCOL.md` and
+  run the tests after touching register or scaling code.

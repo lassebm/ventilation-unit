@@ -1,0 +1,44 @@
+# Lint with the pinned upstream-matching tool versions (see AGENTS.md), then run the test suite,
+# including the full ESP32 compile of the example config.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.4.0
+      - name: clang-format
+        run: uvx --from clang-format==23.1.3 clang-format --dry-run --Werror esphome/components/*/*.h esphome/components/*/*.cpp
+      - name: ruff format
+        run: uvx ruff@0.17.5 format --check .
+      - name: ruff check
+        run: uvx ruff@0.17.5 check .
+      - name: yamllint
+        run: uvx yamllint@1.38.0 .
+      - name: ESPHome conventions (upstream ci-custom.py)
+        run: script/lint-upstream
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.4.0
+      - name: Cache ESPHome toolchains and builds
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.platformio
+            tests/.build
+            tests/e2e/configs/.esphome
+          key: esphome-${{ hashFiles('tests/requirements.txt') }}
+      - name: Test suite
+        run: script/test --all -v
