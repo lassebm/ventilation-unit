@@ -1,0 +1,36 @@
+# expect-error: requires uart referenced by panel_uart_id to declare a tx_pin
+esphome:
+  name: ventilation-unit-config-test
+
+esp32:
+  board: esp32-s3-devkitc-1
+  framework:
+    type: esp-idf
+
+logger:
+
+external_components:
+  - source:
+      type: local
+      path: ../../../esphome/components
+
+usb_uart:
+  - type: CP210X
+    vid: 0x10C4
+    pid: 0xEA61
+    channels:
+      - id: controller_usb_uart
+        baud_rate: 38400
+
+uart:
+  - id: panel_uart
+    rx_pin: GPIO17
+    baud_rate: 600
+  - id: controller_panel_uart
+    tx_pin: GPIO7
+    rx_pin: GPIO6
+    baud_rate: 600
+
+ventilation_panel_bridge:
+  panel_uart_id: panel_uart
+  controller_uart_id: controller_panel_uart

@@ -10,6 +10,7 @@ from esphome.const import (
     ICON_FAN,
 )
 
+DOMAIN = "ventilation_panel_bridge"
 DEPENDENCIES = ["uart"]
 AUTO_LOAD = ["binary_sensor", "fan", "switch"]
 
@@ -60,6 +61,35 @@ CONFIG_SCHEMA = cv.Schema(
         ),
     }
 ).extend(cv.COMPONENT_SCHEMA)
+
+
+# Both panel-link UARTs are fixed at 600 8N1 — reject a mismatched uart at config time. The panel
+# UART is optional (no physical panel), so its check only applies when it's configured.
+_PANEL_LINK = {"baud_rate": 600, "data_bits": 8, "parity": "NONE", "stop_bits": 1}
+_validate_controller_uart = uart.final_validate_device_schema(
+    DOMAIN,
+    uart_bus=CONF_CONTROLLER_UART_ID,
+    require_tx=True,
+    require_rx=True,
+    **_PANEL_LINK,
+)
+_validate_panel_uart = uart.final_validate_device_schema(
+    DOMAIN,
+    uart_bus=CONF_PANEL_UART_ID,
+    require_tx=True,
+    require_rx=True,
+    **_PANEL_LINK,
+)
+
+
+def _final_validate(config):
+    _validate_controller_uart(config)
+    if CONF_PANEL_UART_ID in config:
+        _validate_panel_uart(config)
+    return config
+
+
+FINAL_VALIDATE_SCHEMA = _final_validate
 
 
 async def to_code(config):

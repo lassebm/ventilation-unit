@@ -36,6 +36,7 @@ from esphome.core import CORE
 # The controller link is a usb_uart channel (CP210X) on the ESP32. On the `host` platform any
 # serial port works instead (a USB-serial adapter on a Linux box, or the test suite's pty), so the
 # hard dependency is just `uart`; the uart_id validator below picks the right class.
+DOMAIN = "ventilation_unit"
 DEPENDENCIES = ["uart"]
 AUTO_LOAD = ["binary_sensor", "button", "number", "sensor", "switch", "text_sensor"]
 
@@ -232,6 +233,11 @@ CONFIG_SCHEMA = (
     )
     .extend(cv.polling_component_schema("30s"))
     .extend(cv.Schema({cv.GenerateID(CONF_UART_ID): _uart_id}))
+)
+
+# The controller's USB/PC link is fixed at 38400 8N1 — reject a mismatched channel at config time.
+FINAL_VALIDATE_SCHEMA = uart.final_validate_device_schema(
+    DOMAIN, baud_rate=38400, data_bits=8, parity="NONE", stop_bits=1
 )
 
 
