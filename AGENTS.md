@@ -18,7 +18,7 @@ device behavior — see the README for the full picture.
 - `docs/HARDWARE.md`, `docs/INSTALL.md` — end-user hardware/wiring and install/CLI/usage docs.
 - `cli/ventilation_unit.py` — standalone Python CLI for direct USB/PC register read/write/poll.
 - `esphome/components/ventilation_unit/` — ESPHome component for the USB/PC register protocol
-  (C++ runtime in `ventilation_unit.h` + Python codegen in `__init__.py`).
+  (C++ runtime in `ventilation_unit.h`/`.cpp` + Python codegen in `__init__.py`).
 - `esphome/components/ventilation_panel_bridge/` — ESPHome component bridging the separate physical
   front panel UART for mode/bypass control.
 - `esphome/ventilation-unit.yaml` — the example / bring-up config. `esphome/secrets.yaml` is
@@ -73,9 +73,14 @@ Mirrors upstream ESPHome's toolchain. The configs (`.clang-format`, `.yamllint`,
 sections of `pyproject.toml`) are copies of upstream's, and the tool versions are pinned to
 upstream's. **Run these before committing.** There is no CI to catch misses:
 
-- **C++** — `uvx --from clang-format==23.1.3 clang-format -i esphome/components/*/*.h`
+- **C++** — `uvx --from clang-format==23.1.3 clang-format -i esphome/components/*/*.h esphome/components/*/*.cpp`
 - **Python** — `uvx ruff@0.17.5 format . && uvx ruff@0.17.5 check .`
 - **YAML** — `uvx yamllint@1.38.0 .`
+- **ESPHome conventions** — `script/lint-upstream`: upstream's own custom lint
+  (`script/ci-custom.py`: `DOMAIN`, `CONF_*` constants from `esphome.const`, log tags, braces around
+  log calls, no `ESP_LOG*` in headers, ...) at the ESPHome version pinned in
+  `tests/requirements.txt`. It needs `uv` and network access the first time (the script is cached
+  under `tests/.build/`). A line that must stay as it is gets a `NOLINT` comment, as upstream does.
 
 Use these pinned versions, not whatever is installed locally or the latest release. A newer tool can
 stabilize a lint rule or reformat code, which changes results without any change here. After
@@ -115,7 +120,8 @@ When bringing the components up to a new ESPHome release (or fixing a break caus
     `requirements_dev.txt` (clang-format, yamllint).
   - Diff `.clang-format`, `.yamllint`, and the ruff sections of `pyproject.toml` against upstream's
     and adopt the changes.
-  - Re-run the formatters and linters.
+  - Re-run the formatters and linters. `script/lint-upstream` follows the ESPHome pin by itself, so
+    a new release can bring new convention checks.
 - Verify with a full `esphome compile` (check for warnings or deprecations from the components),
   the test suite (`script/test --all`), and the linters.
 

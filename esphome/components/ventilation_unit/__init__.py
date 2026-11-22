@@ -60,12 +60,11 @@ CONF_INFLOW_SPEED_SETPOINTS = "inflow_speed_setpoints"
 CONF_OUTFLOW_SPEED_SETPOINTS = "outflow_speed_setpoints"
 CONF_FIRMWARE_VERSION = "firmware_version"
 
-CONF_SPEED_STANDBY = "standby"
+CONF_STANDBY = "standby"
 CONF_SPEED_1 = "speed_1"
 CONF_SPEED_2 = "speed_2"
 CONF_SPEED_3 = "speed_3"
-CONF_SPEED_FORCE_INPUT = "force_input"
-CONF_SPEED_HUMIDITY_BOOST = "humidity_boost"
+CONF_HUMIDITY_BOOST = "humidity_boost"
 
 REG_INFLOW_SPEED_SETPOINT_BASE = 0x10
 REG_OUTFLOW_SPEED_SETPOINT_BASE = 0x20
@@ -98,12 +97,12 @@ def setpoint_schema():
 
 
 SPEED_SETPOINTS = (
-    CONF_SPEED_STANDBY,
+    CONF_STANDBY,
     CONF_SPEED_1,
     CONF_SPEED_2,
     CONF_SPEED_3,
-    CONF_SPEED_FORCE_INPUT,
-    CONF_SPEED_HUMIDITY_BOOST,
+    CONF_FORCE_INPUT,
+    CONF_HUMIDITY_BOOST,
 )
 
 

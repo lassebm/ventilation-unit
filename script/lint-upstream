@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Run upstream ESPHome's custom lint (script/ci-custom.py) over our components, at the ESPHome
+# version pinned in tests/requirements.txt. It checks upstream's conventions (DOMAIN, constants
+# from const.py, log tags, braces around log calls, ...) that ruff and clang-format don't.
+#
+# The script expects to run inside upstream's tree, so the components are staged next to that
+# version's esphome/const.py in a scratch git repo; reported paths match this repo's.
+set -euo pipefail
+
+repo="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$repo"
+version="$(sed -n 's/^esphome==//p' tests/requirements.txt)"
+cache="$repo/tests/.build/upstream-lint/$version"
+
+if [ ! -f "$cache/ci-custom.py" ] || [ ! -f "$cache/helpers.py" ]; then
+  mkdir -p "$cache"
+  for f in ci-custom.py helpers.py; do
+    curl -fsSL "https://raw.githubusercontent.com/esphome/esphome/$version/script/$f" -o "$cache/$f"
+  done
+fi
+
+run() { uv run -q --no-project --python 3.13 --with-requirements "$repo/tests/requirements.txt" "$@"; }
+esphome_dir="$(run python -c 'import esphome, os; print(os.path.dirname(esphome.__file__))')"
+
+stage="$(mktemp -d)"
+trap 'rm -rf "$stage"' EXIT
+mkdir -p "$stage/esphome/components/const"
+cp "$esphome_dir/const.py" "$stage/esphome/"
+cp "$esphome_dir/components/const/__init__.py" "$stage/esphome/components/const/"
+git ls-files --cached --others --exclude-standard esphome/components | while read -r f; do
+  mkdir -p "$stage/$(dirname "$f")"
+  cp "$f" "$stage/$f"
+done
+components="$(git ls-files --cached --others --exclude-standard esphome/components | cut -d/ -f3 | sort -u | paste -sd'|' -)"
+
+cd "$stage"
+git init -q
+git add -A
+run python "$cache/ci-custom.py" "^esphome/components/($components)/"
